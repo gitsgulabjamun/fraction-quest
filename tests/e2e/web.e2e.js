@@ -72,7 +72,19 @@ module.exports = async function webE2E() {
     ok('test report button returns the report', /5 questions/.test(repText) && /No delivery channel/.test(repText), repText.split('\n')[0]);
     await phone.screenshot({ path: process.env.SHOTS + '/web-report-settings.png', fullPage: true });
     await demo.screenshot({ path: process.env.SHOTS + '/web-demo-home.png' });
-    // 6. forgotten code: a device with a stale code is sent back to the gate
+    // 6. parent goes straight from the code screen to the report, no player setup
+    const parentDev = watch(await (await b.newContext({ ...devices['Pixel 5'] })).newPage());
+    await parentDev.goto(base + '/'); await parentDev.waitForSelector('#gparent');
+    await parentDev.click('#gparent'); ok('parent link without a code asks for the code', /Enter the family code first/.test(await parentDev.innerText('#gerr')));
+    await parentDev.fill('#fcode', process.env.FAMILY_CODE); await parentDev.click('#gparent');
+    await parentDev.waitForSelector('#pin'); await parentDev.fill('#pin', '2468'); await parentDev.click('#po'); await parentDev.waitForSelector('.tiles');
+    ok('code screen parent link opens the report on a new phone', /QUESTIONS TODAY\s*5/i.test(await parentDev.innerText('.tiles')));
+    // labelled parent button on the map, and a parent link on the name screen
+    ok('map shows a labelled Parent button', (await laptop.innerText('#parentBtn')).trim() === 'Parent');
+    const fresh = watch(await (await b.newContext()).newPage());
+    await fresh.goto(base + '/#demo'); await fresh.waitForSelector('#obParent');
+    await fresh.click('#obParent'); ok('name screen has a parent link that opens the PIN box', !!(await fresh.$('#pin')));
+    // 7. forgotten code: a device with a stale code is sent back to the gate
     const stale = watch(await (await b.newContext()).newPage());
     await stale.goto(base + '/'); await stale.evaluate(() => localStorage.setItem('fq.familyCode', 'old-code')); await stale.reload();
     await stale.waitForSelector('#fcode'); ok('stale code goes back to the gate', /no longer works/.test(await stale.innerText('#gerr')));

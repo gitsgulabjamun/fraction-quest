@@ -275,7 +275,7 @@ function buildDailyMix(){
 let VIEW = { name:'home' }; let RUN = null;
 function route(){
   const app = $('#app');
-  if (!S.player.name) return renderOnboard(app);
+  if (!S.player.name && VIEW.name !== 'parent') return renderOnboard(app);
   if (VIEW.name === 'play') return renderPlay(app);
   if (VIEW.name === 'results') return renderResults(app);
   if (VIEW.name === 'parent') return renderParent(app);
@@ -287,9 +287,11 @@ function renderOnboard(app){
   app.innerHTML = '<div class="play" style="max-width:520px;margin-top:6vh"><div class="card" style="text-align:center"><div class="mascot">' + mascot('wow', 96) + '</div><h1 style="font-size:32px;margin:8px 0">Fraction Quest</h1><p class="muted">Hop across 12 islands, one for each part of your fractions chapter. Warm up with your textbook, then take on fresh puzzles and twists.</p>'
     + '<div class="field" style="text-align:left"><label for="nm">What should I call you?</label><input id="nm" maxlength="20" autocomplete="off" placeholder="Your name"></div>'
     + '<div class="field" style="text-align:left"><label>Pick your pie buddy\'s colour</label><div class="actions" id="cols">' + ['coral', 'teal', 'butter', 'lilac'].map(c => '<button class="btn ghost small" data-c="' + c + '" style="border-color:var(--' + c + ')">' + c[0].toUpperCase() + c.slice(1) + '</button>').join('') + '</div></div>'
-    + '<button class="btn coral" id="start" style="width:100%;margin-top:8px">Start the quest</button></div></div>';
+    + '<button class="btn coral" id="start" style="width:100%;margin-top:8px">Start the quest</button></div>'
+    + '<p class="note" style="text-align:center;margin-top:14px"><button class="learnlink" id="obParent">Parent? Open the parent area</button></p></div>';
   let col = 'coral';
   $$('#cols button').forEach(b => b.onclick = () => { col = b.dataset.c; $$('#cols button').forEach(x => x.style.background = ''); b.style.background = 'var(--' + col + '-s)'; });
+  $('#obParent').onclick = () => parentGate();
   $('#start').onclick = () => { const n = $('#nm').value.replace(/[<>&"']/g, '').trim(); if (!n) { $('#nm').focus(); return; } S.player.name = n; S.player.color = col; PLAYER = S.player; saveLocal(true); go('home'); };
   $('#nm').addEventListener('keydown', e => { if (e.key === 'Enter') $('#start').click(); });
 }
@@ -303,7 +305,7 @@ function renderHome(app){
   const greet = t.att === 0 ? 'Ready for today\'s quest, ' + esc(S.player.name) + '?' : t.ms >= S.settings.goalMin * 60000 ? 'Daily goal smashed, ' + esc(S.player.name) + '!' : 'Nice going, ' + esc(S.player.name) + '. Keep hopping!';
   let html = '<div class="top"><div class="brand">' + mascot('happy', 46) + '<div><h1>Fraction Quest</h1><small>Chapter 5 · Fractions</small></div></div>'
     + '<span class="chip tnum" title="Rank">' + ICON.gem + rk.name + ' · ' + S.xp + ' XP</span><span class="chip tnum" title="Days in a row">' + ICON.flame + streak + ' day' + (streak === 1 ? '' : 's') + '</span>'
-    + '<button class="iconbtn" id="parentBtn" title="Parent area" aria-label="Parent area">' + ICON.lock + '</button></div>';
+    + '<button class="btn ghost small" id="parentBtn" title="Parent area" style="display:inline-flex;align-items:center;gap:6px"><span style="width:18px;height:18px;display:inline-grid">' + ICON.lock + '</span>Parent</button></div>';
   if (MODE.kind === 'demo') html += '<div class="panel" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px"><b>Demo mode.</b><span class="muted" style="flex:1;min-width:200px">Everything works, including the parent report behind the lock. Progress stays in this browser only.</span><button class="btn ghost small" id="exitDemo">Exit demo</button></div>';
   html += '<div class="hero"><div class="mascot">' + mascot(t.att ? 'wow' : 'happy', 72) + '</div><div><div class="say">' + greet + '</div><div class="sub tnum">Today: ' + t.att + ' questions · ' + (t.att ? Math.round(100 * t.cor / t.att) : 0) + '% correct' + (rk.next ? ' · ' + (rk.next[1] - S.xp) + ' XP to ' + rk.next[0] : '') + '</div><div class="actions"><button class="btn coral" id="mixBtn">Daily Mix</button><button class="btn ghost" id="contBtn">Continue where I left off</button></div></div><div class="ring" id="ring"></div></div>';
   html += '<div class="map">';
@@ -596,7 +598,7 @@ async function renderParent(app){
   const logs = (await loadLogs()).sort((a, b) => a.date < b.date ? 1 : -1);
   const tk = dayKey(); const t = logs.find(d => d.date === tk) || { att:0, cor:0, first:0, hints:0, ms:0, sessions:[], attempts:[], skills:{}, worlds:{} };
   const pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '–';
-  let html = '<div class="dash"><div class="top"><button class="iconbtn" id="pback" aria-label="Back">' + ICON.back + '</button><div class="brand"><div><h1>Parent report</h1><small>' + esc(S.player.name) + ' · ' + (SYNC.mode === 'cloud' ? 'synced online' : MODE.kind === 'demo' ? 'demo, this browser only' : 'saved on this device only') + '</small></div></div><button class="btn ghost small" id="tabR">Report</button><button class="btn ghost small" id="tabS">Settings</button></div>';
+  let html = '<div class="dash"><div class="top"><button class="iconbtn" id="pback" aria-label="Back">' + ICON.back + '</button><div class="brand"><div><h1>Parent report</h1><small>' + esc(S.player.name || 'No player yet') + ' · ' + (SYNC.mode === 'cloud' ? 'synced online' : MODE.kind === 'demo' ? 'demo, this browser only' : 'saved on this device only') + '</small></div></div><button class="btn ghost small" id="tabR">Report</button><button class="btn ghost small" id="tabS">Settings</button></div>';
   if (VIEW.tab === 'settings') { app.innerHTML = html + settingsHtml() + '</div>'; wireParent(); wireSettings(); return; }
   const last = logs.find(d => d.att > 0); const lastAt = last && last.attempts && last.attempts.length ? last.attempts[last.attempts.length - 1].t : null;
   html += '<div class="tiles"><div class="tile"><span>Active today</span><b>' + mins(t.ms) + ' min</b><small>Goal ' + S.settings.goalMin + ' min</small></div><div class="tile"><span>Questions today</span><b>' + t.att + '</b><small>' + t.first + ' right on first try</small></div><div class="tile"><span>Accuracy today</span><b>' + pct(t.cor, t.att) + '</b><small>' + t.hints + ' hints used</small></div><div class="tile"><span>Last practice</span><b style="font-size:20px">' + (lastAt ? (dayKey(lastAt) === tk ? 'Today ' : last.date.slice(5) + ' ') + fmtTime(lastAt) : 'Never') + '</b><small>Day streak ' + dayStreak() + '</small></div></div>';
@@ -645,6 +647,7 @@ function wireSettings(){
   if (MODE.kind === 'web' && !familyCode()) return renderGate($('#app'));
   if (MODE.kind === 'web' || (!S.player.name && MODE.kind === 'artifact')) { await Promise.race([initDb(), new Promise(r => setTimeout(r, 5000))]); if (SYNC.err === 'unauthorized') { lsSet('fq.familyCode', null); return renderGate($('#app'), 'That family code no longer works. Enter it again.'); } route(); }
   else { route(); initDb(); }
+  if (ssGet('fq.parentNext') === '1') { ssSet('fq.parentNext', null); parentGate(); }
 })();
 
 function renderGate(app, msg){
@@ -652,16 +655,18 @@ function renderGate(app, msg){
     + '<p class="muted">A fractions practice game for Class 6. Twelve islands, one for each part of the chapter: textbook warm-ups, fresh questions, and twists that make you think.</p>'
     + '<div class="field" style="text-align:left"><label for="fcode">Family code</label><input id="fcode" type="password" autocomplete="current-password" placeholder="Enter your family code"></div><p class="note" id="gerr" style="min-height:1.2em">' + esc(msg || '') + '</p>'
     + '<button class="btn coral" id="genter" style="width:100%">Enter</button>'
+    + '<p style="margin:10px 0 0"><button class="learnlink" id="gparent">I\'m a parent: open the report</button></p>'
     + '<div style="margin:18px 0 6px;color:var(--ink2);font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px">or</div>'
     + '<button class="btn ghost" id="gdemo" style="width:100%">Try the demo</button><p class="note" style="margin-top:10px">The demo works fully, with progress kept only in your browser.</p></div>'
     + '<p class="note" style="text-align:center;margin-top:14px">Built by <a href="https://suniljadhav.in" target="_blank" rel="noopener" style="color:inherit">Sunil Jadhav</a> with Claude.</p></div>';
-  const enter = async () => {
-    const code = $('#fcode').value.trim(); if (!code) return $('#fcode').focus();
+  const enter = async (asParent) => {
+    const code = $('#fcode').value.trim(); if (!code) { $('#gerr').textContent = asParent === true ? 'Enter the family code first, then tap the parent link again.' : ''; return $('#fcode').focus(); }
+    if (asParent === true) ssSet('fq.parentNext', '1');
     $('#gerr').textContent = 'Checking…'; lsSet('fq.familyCode', code);
     try { await remoteDb().doc('progress/main').get(); location.reload(); }
-    catch (e) { lsSet('fq.familyCode', null); $('#gerr').textContent = e.code === 'unauthorized' ? 'That code is not right. Check with your parent.' : e.code === 'resource_exhausted' ? 'Too many wrong tries. Wait an hour and try again.' : 'Could not reach the server. Check the internet connection.'; }
+    catch (e) { lsSet('fq.familyCode', null); ssSet('fq.parentNext', null); $('#gerr').textContent = e.code === 'unauthorized' ? 'That code is not right. Check with your parent.' : e.code === 'resource_exhausted' ? 'Too many wrong tries. Wait an hour and try again.' : 'Could not reach the server. Check the internet connection.'; }
   };
-  $('#genter').onclick = enter; $('#fcode').addEventListener('keydown', e => { if (e.key === 'Enter') enter(); });
+  $('#genter').onclick = () => enter(false); $('#gparent').onclick = () => enter(true); $('#fcode').addEventListener('keydown', e => { if (e.key === 'Enter') enter(false); });
   $('#gdemo').onclick = () => { ssSet('fq.demo', '1'); location.reload(); };
 }
 setTimeout(() => { if (MODE.kind === 'file') maybeTelegramDaily(); }, 4000);
