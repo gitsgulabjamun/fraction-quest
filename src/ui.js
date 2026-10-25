@@ -390,6 +390,25 @@ function wireBody(q){
     if (e.key === '/' && b.id.endsWith('n')) { e.preventDefault(); const d = $('#' + b.id.slice(0, -1) + 'd'); d && d.focus(); }
     if (e.key === ' ' && b.id.endsWith('w')) { e.preventDefault(); const n = $('#' + b.id.slice(0, -1) + 'n'); n && n.focus(); }
   }));
+  // Phone keyboards, paste and autofill often skip keydown, so a typed "1/4" or "2 1/3" lands whole in one box.
+  // Split it across the whole, top and bottom boxes instead of leaving a slash inside the top box.
+  const W = $('#w'), N = $('#n'), D = $('#d');
+  const digits = s => s.replace(/\D/g, '');
+  const toEnd = el => { el.focus(); try { el.setSelectionRange(el.value.length, el.value.length); } catch (_) {} };
+  if (N && D) {
+    N.addEventListener('input', () => { const i = N.value.indexOf('/'); if (i < 0) { if (/\D/.test(N.value)) N.value = digits(N.value); return; } const top = digits(N.value.slice(0, i)), rest = digits(N.value.slice(i + 1)); N.value = top; if (rest) D.value = rest; toEnd(D); });
+    D.addEventListener('input', () => { if (/\D/.test(D.value)) D.value = digits(D.value); });
+    if (W) W.addEventListener('input', () => {
+      const v = W.value; if (!/[\s\/]/.test(v)) { if (/\D/.test(v)) W.value = digits(v); return; }
+      if (/^\s*\d+\s+$/.test(v)) { W.value = digits(v); toEnd(N); return; }
+      let m = v.trim().match(/^(\d+)\s+(\d*)\s*\/?\s*(\d*)$/);
+      if (m && v.includes('/')) { W.value = m[1]; N.value = m[2]; if (m[3]) D.value = m[3]; toEnd(m[3] ? D : N); return; }
+      if (m) { W.value = m[1]; N.value = m[2]; toEnd(N); return; }
+      m = v.trim().match(/^(\d*)\s*\/\s*(\d*)$/);
+      if (m) { W.value = ''; N.value = m[1]; D.value = m[2]; toEnd(m[2] ? D : (m[1] ? D : N)); return; }
+      W.value = digits(v);
+    });
+  }
   if (q.t === 'mcq' || q.t === 'yn') $$('.opt').forEach(b => b.onclick = () => { if (C.done) return; $$('.opt').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); C.pick = +b.dataset.i; });
   if (q.t === 'cmp') $$('.cmpbtns .opt').forEach(b => b.onclick = () => { if (C.done) return; $$('.cmpbtns .opt').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); C.pick = b.dataset.s; $('#slot').textContent = b.dataset.s; });
   if (q.t === 'shade') { const wire = () => $$('#fig .cell').forEach(c => c.onclick = () => { if (C.done) return; const i = +c.dataset.i; C.sel.has(i) ? C.sel.delete(i) : C.sel.add(i); $('#fig').innerHTML = svgFig(q.fig, { interactive:true, sel:C.sel }); const tot = q.fig.k === 'pie' ? q.fig.n : q.fig.r * q.fig.c; $('#shcount').textContent = C.sel.size + ' of ' + tot + ' parts shaded.'; wire(); }); wire(); }

@@ -69,6 +69,7 @@ I learned the hard way that "every answer is accepted" is not the same as "the s
 |---|---|
 | `npm test` (13 tests) | API: auth, path validation, round trips, log ordering, rate limiting, report content, email and Telegram delivery, refusing to run without storage in production. Uses a fake Upstash server. |
 | Web end to end (15 checks) | Through a local server running the real handlers: family code gate, playing, sync from laptop to phone and back, parent report on a phone, demo mode never touching family data, the test report button, stale codes sent back to the gate. |
+| Phone typing (7 checks) | Answers typed the way phone keyboards send them, where "1/4" arrives as plain text with no key events, still split into the right boxes. Found on the live site, not in the lab. |
 | Game regression | A headless browser plays 1,440 questions across every island and level through the real interface and confirms each correct answer is accepted. |
 | Figure check | Counts the shaded parts actually drawn on screen for every figure question. |
 | Phone check | Every question layout at phone width, with no sideways scrolling. |
