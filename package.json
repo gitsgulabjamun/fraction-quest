@@ -1,0 +1,13 @@
+{
+  "name": "fraction-quest",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A first-principles fractions practice game for Class 6 with a parent report and an evening email.",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "dev": "node scripts/build.js && FAMILY_CODE=dev node scripts/dev-server.js 3000",
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "node scripts/build.js && node tests/e2e/run.js"
+  },
+  "engines": { "node": ">=20" }
+}

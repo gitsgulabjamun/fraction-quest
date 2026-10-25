@@ -1,0 +1,1746 @@
+<title>Fraction Quest</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@500;700;800&display=swap">
+<style>
+/* Layout: an island-hopping map of 12 chapters; each island opens a focused one-question-at-a-time play card. */
+:root{
+  --sky:#E9F6F3; --sky2:#D7EFEA; --paper:#FFFFFF; --ink:#2A2140; --ink2:#5B5272; --line:#CFE3DE;
+  --coral:#FF6F8E; --coral-s:#FFE1E8; --teal:#1FAE9B; --teal-s:#D3F3EE; --butter:#FFC94D; --butter-s:#FFF1C9; --lilac:#8F7CF0; --lilac-s:#E9E4FF;
+  --good:#1FA67A; --good-s:#DDF6EC; --bad:#E5484D; --bad-s:#FFE4E5; --warn:#D98A00; --warn-s:#FFF0D1;
+  --crust:#F2B45A; --filling:#FF8FA8;
+  --shadow:0 3px 0 rgba(42,33,64,.12);
+  --f-display:'Fredoka','Baloo 2','Trebuchet MS',system-ui,sans-serif;
+  --f-body:'Nunito','Segoe UI',system-ui,sans-serif;
+  --r:18px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --sky:#17142A; --sky2:#201C38; --paper:#262143; --ink:#F3EEFF; --ink2:#B8AED6; --line:#3A3460;
+  --coral:#FF7F9B; --coral-s:#4A2436; --teal:#3CCFB9; --teal-s:#173F3B; --butter:#FFD36B; --butter-s:#47391A; --lilac:#A897FF; --lilac-s:#2F2858;
+  --good:#3FD39F; --good-s:#173D31; --bad:#FF6B70; --bad-s:#4A2023; --warn:#FFB84D; --warn-s:#47361A;
+  --crust:#F2B45A; --filling:#FF8FA8; --shadow:0 3px 0 rgba(0,0,0,.35); color-scheme:dark } }
+:root[data-theme="dark"]{
+  --sky:#17142A; --sky2:#201C38; --paper:#262143; --ink:#F3EEFF; --ink2:#B8AED6; --line:#3A3460;
+  --coral:#FF7F9B; --coral-s:#4A2436; --teal:#3CCFB9; --teal-s:#173F3B; --butter:#FFD36B; --butter-s:#47391A; --lilac:#A897FF; --lilac-s:#2F2858;
+  --good:#3FD39F; --good-s:#173D31; --bad:#FF6B70; --bad-s:#4A2023; --warn:#FFB84D; --warn-s:#47361A;
+  --crust:#F2B45A; --filling:#FF8FA8; --shadow:0 3px 0 rgba(0,0,0,.35); color-scheme:dark }
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--sky);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.5;
+  background-image:radial-gradient(circle at 12% 8%, var(--sky2) 0 120px, transparent 121px), radial-gradient(circle at 88% 30%, var(--sky2) 0 90px, transparent 91px);}
+button{font-family:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,[tabindex]:focus-visible{outline:3px solid var(--lilac);outline-offset:2px}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0;text-wrap:balance;letter-spacing:.2px}
+.wrap{max-width:980px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 48px}
+.muted{color:var(--ink2)}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* fractions in text */
+.fr{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;line-height:1.05;margin:0 .12em;font-family:var(--f-display);font-weight:600;font-size:.95em}
+.fr>span{padding:0 .18em}
+.fr .num{border-bottom:2px solid currentColor}
+.mx{display:inline-flex;align-items:center;font-family:var(--f-display);font-weight:600;gap:.05em}
+
+/* top bar */
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:10px;margin-right:auto}
+.brand h1{font-size:26px;color:var(--ink)}
+.brand small{display:block;font-size:13px;color:var(--ink2);font-family:var(--f-body)}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--paper);border:2px solid var(--line);border-radius:999px;padding:5px 12px;font-weight:800;font-size:14px;box-shadow:var(--shadow)}
+.iconbtn{border:2px solid var(--line);background:var(--paper);border-radius:12px;width:40px;height:40px;display:grid;place-items:center;color:var(--ink2);box-shadow:var(--shadow)}
+.iconbtn svg{width:20px;height:20px}
+
+/* hero strip */
+.hero{display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;background:var(--paper);border:2px solid var(--line);border-radius:24px;padding:16px 18px;box-shadow:var(--shadow);margin-bottom:22px}
+.hero .say{font-family:var(--f-display);font-size:20px;font-weight:600}
+.hero .sub{color:var(--ink2);font-size:14px}
+.ring{position:relative;width:86px;height:86px}
+.ring svg{transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--f-display);font-size:18px;text-align:center;line-height:1.05}
+.ring b small{display:block;font-size:11px;font-family:var(--f-body);color:var(--ink2);font-weight:700}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+
+.btn{border:none;border-radius:14px;padding:11px 18px;font-weight:800;font-size:16px;background:var(--ink);color:var(--paper);box-shadow:0 4px 0 rgba(0,0,0,.25);transition:transform .08s}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 rgba(0,0,0,.25)}
+.btn.coral{background:var(--coral);color:#fff}
+.btn.teal{background:var(--teal);color:#fff}
+.btn.ghost{background:var(--paper);color:var(--ink);border:2px solid var(--line);box-shadow:var(--shadow)}
+.btn.small{padding:7px 12px;font-size:14px;border-radius:11px}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+
+/* map */
+.map{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.isle{position:relative;background:var(--paper);border:2px solid var(--line);border-radius:26px 26px 22px 22px;padding:14px 14px 12px;box-shadow:var(--shadow);min-width:0}
+.isle.locked{opacity:.55}
+.isle .ex{font-size:12px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;padding:2px 9px;border-radius:999px;display:inline-block}
+.isle h3{font-size:19px;margin:6px 0 0}
+.isle .topic{font-size:13px;color:var(--ink2);margin-bottom:10px}
+.isle .blob{position:absolute;right:12px;top:12px;width:44px;height:44px}
+.lv{display:flex;align-items:center;gap:8px;width:100%;border:2px solid var(--line);background:var(--sky);border-radius:12px;padding:7px 10px;margin-top:6px;color:var(--ink);font-weight:800;font-size:14px;text-align:left}
+.lv:hover:not([disabled]){border-color:var(--ink2)}
+.lv[disabled]{cursor:not-allowed;color:var(--ink2)}
+.lv .nm{flex:1;min-width:0}
+.lv .nm small{display:block;font-weight:700;font-size:11px;color:var(--ink2)}
+.stars{display:inline-flex;gap:1px}
+.stars svg{width:15px;height:15px}
+.learnlink{background:none;border:none;color:var(--ink2);font-weight:800;font-size:13px;text-decoration:underline;text-underline-offset:3px;padding:6px 0 0}
+.c-coral .ex{background:var(--coral-s);color:var(--coral)} .c-teal .ex{background:var(--teal-s);color:var(--teal)}
+.c-butter .ex{background:var(--butter-s);color:var(--warn)} .c-lilac .ex{background:var(--lilac-s);color:var(--lilac)}
+
+/* play */
+.play{max-width:760px;margin:0 auto}
+.pbar{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.dots{display:flex;gap:6px;flex:1;min-width:0}
+.dots i{flex:1;height:10px;border-radius:99px;background:var(--line)}
+.dots i.ok{background:var(--good)} .dots i.half{background:var(--butter)} .dots i.no{background:var(--bad)} .dots i.cur{background:var(--lilac)}
+.card{background:var(--paper);border:2px solid var(--line);border-radius:26px;padding:22px;box-shadow:var(--shadow)}
+.qhead{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:12px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.tag{padding:2px 9px;border-radius:999px;background:var(--sky);border:1.5px solid var(--line)}
+.tag.book{background:var(--butter-s);border-color:transparent;color:var(--warn)}
+.tag.twist{background:var(--lilac-s);border-color:transparent;color:var(--lilac)}
+.q{font-size:22px;font-weight:700;line-height:1.55;margin:4px 0 14px}
+.q .fr{font-size:1em}
+.figwrap{display:flex;justify-content:center;flex-wrap:wrap;gap:12px;margin:10px 0 16px}
+.figwrap svg{max-width:100%;height:auto}
+.figs4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:8px 0 14px}
+.figs4 div{text-align:center;font-weight:800;font-family:var(--f-display)}
+.answer{display:flex;flex-wrap:wrap;align-items:center;gap:14px;justify-content:center;margin:14px 0 6px}
+.fin{display:inline-flex;align-items:center;gap:8px}
+.fin .stack{display:inline-flex;flex-direction:column;align-items:center;gap:4px}
+.fin .stack hr{width:100%;border:none;border-top:3px solid var(--ink);margin:0}
+.box{width:76px;height:52px;border:2.5px solid var(--line);border-radius:12px;text-align:center;font-family:var(--f-display);font-size:24px;font-weight:600;background:var(--sky);color:var(--ink)}
+.box.w{width:64px;height:64px}
+.box.wide{width:150px}
+.box:focus{border-color:var(--lilac);background:var(--paper);outline:none}
+.unit{font-weight:800;color:var(--ink2)}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%}
+.opt{border:2.5px solid var(--line);background:var(--sky);border-radius:14px;padding:12px 14px;font-size:17px;font-weight:700;color:var(--ink);text-align:left;min-height:56px}
+.opt.sel{border-color:var(--lilac);background:var(--lilac-s)}
+.opt.right{border-color:var(--good);background:var(--good-s)} .opt.wrong{border-color:var(--bad);background:var(--bad-s)}
+.cmpwrap{display:flex;align-items:center;justify-content:center;gap:16px;font-size:30px}
+.cmpbtns{display:flex;gap:10px;justify-content:center}
+.cmpbtns .opt{width:72px;text-align:center;font-size:28px;font-family:var(--f-display)}
+.slot{min-width:72px;height:64px;border:3px dashed var(--line);border-radius:14px;display:grid;place-items:center;font-size:30px;font-family:var(--f-display)}
+.order{display:flex;flex-direction:column;gap:12px;width:100%}
+.orow{display:flex;flex-wrap:wrap;gap:8px;min-height:62px;padding:8px;border-radius:14px;border:2px dashed var(--line);align-items:center}
+.orow.pool{border-style:solid;background:var(--sky)}
+.ochip{border:2.5px solid var(--line);background:var(--paper);border-radius:12px;padding:6px 12px;font-size:20px;color:var(--ink)}
+.olabel{font-size:12px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:.8px}
+.ctrl{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin-top:16px}
+.fb{margin-top:16px;border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:56px 1fr;gap:12px;align-items:start}
+.fb.good{background:var(--good-s)} .fb.bad{background:var(--bad-s)} .fb.mid{background:var(--warn-s)} .fb.hint{background:var(--lilac-s)}
+.fb h4{margin:0 0 4px;font-family:var(--f-display);font-size:19px;font-weight:600}
+.fb ol{margin:6px 0 0;padding-left:20px} .fb li{margin:3px 0}
+.fb p{margin:4px 0}
+.hintbtn{display:inline-flex;align-items:center;gap:6px}
+
+/* results */
+.res{text-align:center;max-width:560px;margin:20px auto}
+.res .bigstars svg{width:56px;height:56px}
+.statrow{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:18px 0}
+.stat{background:var(--paper);border:2px solid var(--line);border-radius:16px;padding:12px}
+.stat b{display:block;font-family:var(--f-display);font-size:26px}
+.stat span{font-size:12px;color:var(--ink2);font-weight:800;text-transform:uppercase;letter-spacing:.6px}
+.badge svg{width:18px;height:18px;flex:none}
+.badge{display:inline-flex;align-items:center;gap:8px;background:var(--butter-s);color:var(--ink);border-radius:999px;padding:6px 12px;font-weight:800;margin:4px}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(20,16,36,.45);display:grid;place-items:center;padding:16px;z-index:50}
+.sheet{background:var(--paper);border-radius:24px;max-width:620px;width:100%;max-height:88vh;overflow:auto;padding:22px;border:2px solid var(--line)}
+.sheet ul{padding-left:20px} .sheet li{margin:8px 0}
+.learnbig{font-family:var(--f-display);font-size:21px;font-weight:600;line-height:1.4;margin:8px 0 10px}
+.think{background:var(--lilac-s);border-radius:14px;padding:12px 14px;font-weight:700}
+.field{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.field label{font-weight:800;font-size:14px}
+.field input{border:2px solid var(--line);border-radius:12px;padding:10px 12px;font-size:16px;background:var(--sky);color:var(--ink);font-family:inherit}
+
+/* parent dashboard */
+.dash h2{font-size:24px}
+.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:14px 0 18px}
+.tile{background:var(--paper);border:2px solid var(--line);border-radius:16px;padding:12px 14px}
+.tile b{display:block;font-family:var(--f-display);font-size:28px;font-variant-numeric:tabular-nums}
+.tile span{font-size:12px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:.6px}
+.tile small{display:block;color:var(--ink2);font-size:12px}
+.panel{background:var(--paper);border:2px solid var(--line);border-radius:18px;padding:16px;margin-bottom:16px}
+.panel h3{font-size:18px;margin-bottom:10px}
+.tbl{width:100%;border-collapse:collapse;font-size:14px}
+.tbl th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--ink2);padding:6px 8px;border-bottom:2px solid var(--line)}
+.tbl td{padding:7px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.scroll{overflow-x:auto}
+.pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:800}
+.pill.g{background:var(--good-s);color:var(--good)} .pill.b{background:var(--bad-s);color:var(--bad)} .pill.m{background:var(--warn-s);color:var(--warn)}
+.bars{display:flex;align-items:flex-end;gap:6px;height:140px;padding-top:8px;border-bottom:2px solid var(--line)}
+.bars .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:2px;min-width:0;height:100%}
+.bars .bar{width:100%;max-width:28px;border-radius:6px 6px 0 0;background:var(--teal)}
+.bars .bar.zero{background:var(--line);height:3px}
+.bars .lbl{font-size:10px;color:var(--ink2);font-weight:700}
+.meter{height:8px;border-radius:99px;background:var(--line);overflow:hidden;min-width:80px}
+.meter i{display:block;height:100%;background:var(--teal)}
+.note{font-size:13px;color:var(--ink2)}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 16px;border-radius:12px;font-weight:800;z-index:60}
+canvas#confetti{position:fixed;inset:0;pointer-events:none;z-index:40}
+
+@media (max-width:760px){
+  .map{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:520px){
+  .map{grid-template-columns:1fr}
+  .hero{grid-template-columns:1fr auto}
+  .hero .mascot{display:none}
+  .q{font-size:19px}
+  .opts{grid-template-columns:1fr}
+  .figs4{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .statrow{grid-template-columns:1fr 1fr 1fr}
+}
+@media (prefers-reduced-motion: reduce){ *{animation:none!important;transition:none!important} }
+@keyframes pop{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+.fb,.card{animation:pop .18s ease-out}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.mascot svg{animation:bob 2.6s ease-in-out infinite}
+</style>
+<canvas id="confetti"></canvas>
+<div id="app" class="wrap"><p class="muted">Loading Fraction Quest…</p></div>
+
+<script>
+"use strict";
+// ---- engine.js
+// ---------- Exact fraction arithmetic ----------
+function gcd(a, b){ a = Math.abs(a); b = Math.abs(b); while (b) { [a, b] = [b, a % b]; } return a || 1; }
+function lcm(a, b){ return Math.abs(a * b) / gcd(a, b); }
+
+class Frac {
+  constructor(n, d = 1){
+    if (d === 0) throw new Error('zero denominator');
+    if (d < 0) { n = -n; d = -d; }
+    this.rn = n; this.rd = d;               // raw (unreduced) parts, kept for "exact" checks
+    const g = gcd(n, d); this.n = n / g; this.d = d / g;
+  }
+  static of(x){ return x instanceof Frac ? x : new Frac(x, 1); }
+  add(o){ o = Frac.of(o); return new Frac(this.n * o.d + o.n * this.d, this.d * o.d); }
+  sub(o){ o = Frac.of(o); return new Frac(this.n * o.d - o.n * this.d, this.d * o.d); }
+  mul(o){ o = Frac.of(o); return new Frac(this.n * o.n, this.d * o.d); }
+  div(o){ o = Frac.of(o); if (o.n === 0) throw new Error('divide by zero'); return new Frac(this.n * o.d, this.d * o.n); }
+  cmp(o){ o = Frac.of(o); const x = this.n * o.d - o.n * this.d; return x < 0 ? -1 : x > 0 ? 1 : 0; }
+  eq(o){ return this.cmp(o) === 0; }
+  isInt(){ return this.d === 1; }
+  val(){ return this.n / this.d; }
+  recip(){ return new Frac(this.d, this.n); }
+  // token strings understood by the prompt renderer
+  tok(){ // simplest, mixed when > 1
+    if (this.d === 1) return String(this.n);
+    const neg = this.n < 0, a = Math.abs(this.n);
+    if (a > this.d) { const w = Math.floor(a / this.d), r = a % this.d; return '{' + (neg ? '-' : '') + w + ' ' + r + '/' + this.d + '}'; }
+    return '{' + (neg ? '-' : '') + a + '/' + this.d + '}';
+  }
+  tokImp(){ return this.d === 1 ? String(this.n) : '{' + this.n + '/' + this.d + '}'; }
+  tokRaw(){ return this.rd === 1 ? String(this.rn) : '{' + this.rn + '/' + this.rd + '}'; }
+  key(){ return this.n + '/' + this.d; }
+  mixedParts(){ const a = Math.abs(this.n); return { w: Math.floor(a / this.d), n: a % this.d, d: this.d, neg: this.n < 0 }; }
+}
+
+// parse "3/4", "2_1/3", "2 1/3", "5"  (keeps raw parts)
+function F(s){
+  if (s instanceof Frac) return s;
+  s = String(s).trim();
+  let m = s.match(/^(-?)(\d+)[_ ](\d+)\/(\d+)$/);
+  if (m) { const w = +m[2], n = +m[3], d = +m[4]; const f = new Frac((w * d + n) * (m[1] ? -1 : 1), d); f.mixed = { w, n, d }; return f; }
+  m = s.match(/^(-?\d+)\/(\d+)$/);
+  if (m) return new Frac(+m[1], +m[2]);
+  m = s.match(/^-?\d+$/);
+  if (m) return new Frac(+s, 1);
+  throw new Error('bad fraction ' + s);
+}
+
+// ---------- Expression parser (BODMAS with "of" above x and ÷) ----------
+function tokenize(expr){
+  const out = []; let i = 0; const s = expr;
+  while (i < s.length) {
+    const c = s[i];
+    if (c === ' ') { i++; continue; }
+    const lit = s.slice(i).match(/^(\d+_\d+\/\d+|\d+\/\d+|\d+)/);
+    if (lit) { out.push({ t: 'num', v: F(lit[1]), src: lit[1] }); i += lit[1].length; continue; }
+    if (s.startsWith('of', i)) { out.push({ t: 'op', v: 'of' }); i += 2; continue; }
+    if ('+-x×÷*'.includes(c)) { out.push({ t: 'op', v: c === '*' || c === '×' ? 'x' : c }); i++; continue; }
+    if ('([{'.includes(c)) { out.push({ t: 'lp', v: c }); i++; continue; }
+    if (')]}'.includes(c)) { out.push({ t: 'rp', v: c }); i++; continue; }
+    throw new Error('bad char ' + c + ' in ' + expr);
+  }
+  return out;
+}
+function parseExpr(expr){
+  const toks = tokenize(expr); let p = 0;
+  const peek = () => toks[p], next = () => toks[p++];
+  function primary(){
+    const t = next();
+    if (!t) throw new Error('unexpected end');
+    if (t.t === 'num') return { k: 'n', v: t.v, src: t.src };
+    if (t.t === 'lp') { const e = sum(); const r = next(); if (!r || r.t !== 'rp') throw new Error('missing )'); return { k: 'g', e, br: t.v }; }
+    throw new Error('unexpected ' + JSON.stringify(t));
+  }
+  function ofx(){ let l = primary(); while (peek() && peek().v === 'of') { next(); l = { k: 'b', op: 'of', l, r: primary() }; } return l; }
+  function prod(){ let l = ofx(); while (peek() && (peek().v === 'x' || peek().v === '÷')) { const op = next().v; l = { k: 'b', op, l, r: ofx() }; } return l; }
+  function sum(){ let l = prod(); while (peek() && (peek().v === '+' || peek().v === '-')) { const op = next().v; l = { k: 'b', op, l, r: prod() }; } return l; }
+  const ast = sum(); if (p !== toks.length) throw new Error('trailing tokens in ' + expr);
+  return ast;
+}
+function unwrap(a){ while (a.k === 'g') a = a.e; return a; }
+
+// Evaluate with a step trace for worked solutions
+function evaluate(expr){
+  const ast = parseExpr(expr); const steps = [];
+  function ev(a){
+    if (a.k === 'n') return a.v;
+    if (a.k === 'g') return ev(a.e);
+    const L = ev(a.l), R = ev(a.r);
+    let v;
+    if (a.op === '+') v = L.add(R); else if (a.op === '-') v = L.sub(R);
+    else if (a.op === 'x' || a.op === 'of') v = L.mul(R); else v = L.div(R);
+    steps.push({ op: a.op, L, R, v });
+    return v;
+  }
+  const v = ev(ast);
+  return { v, steps, ast };
+}
+function exprValue(e){ return evaluate(e).v; }
+
+// Convert an expression into prompt tokens: "1_1/3 x 2/5" -> "{1 1/3} × {2/5}"
+function exprToPrompt(e){
+  const sym = { x: '×', '-': '−', '÷': '÷', '+': '+', of: 'of' };
+  let out = '';
+  for (const t of tokenize(e)) {
+    if (t.t === 'num') out += (t.src.includes('_') ? '{' + t.src.replace('_', ' ') + '}' : t.src.includes('/') ? '{' + t.src + '}' : t.src) + ' ';
+    else if (t.t === 'op') out += sym[t.v] + ' ';
+    else if (t.t === 'lp') out += t.v;
+    else out = out.trimEnd() + t.v + ' ';
+  }
+  return out.trim();
+}
+
+// ---------- Worked solution lines (token strings) ----------
+const OPWORD = { '+': '+', '-': '−', 'x': '×', '÷': '÷', 'of': 'of' };
+function stepLines(st){
+  const { op, L, R, v } = st; const lines = [];
+  const show = f => (f.mixed ? '{' + f.mixed.w + ' ' + f.mixed.n + '/' + f.mixed.d + '}' : f.tokImp());
+  // mixed numbers into improper first
+  [L, R].forEach(f => { if (f.mixed) lines.push('Change ' + show(f) + ' into an improper fraction: (' + f.mixed.w + ' × ' + f.mixed.d + ' + ' + f.mixed.n + ') ÷ ' + f.mixed.d + ' = ' + f.tokImp() + '.'); });
+  const a = L, b = R;
+  if (op === '+' || op === '-') {
+    if (a.d === b.d) {
+      lines.push('Same denominator ' + a.d + ', so ' + (op === '+' ? 'add' : 'subtract') + ' the numerators: ' + a.tokImp() + ' ' + OPWORD[op] + ' ' + b.tokImp() + ' = {' + (op === '+' ? a.n + b.n : a.n - b.n) + '/' + a.d + '}.');
+    } else {
+      const m = lcm(a.d, b.d), x = a.n * (m / a.d), y = b.n * (m / b.d);
+      lines.push('The pieces are different sizes, so find a common denominator. LCM of ' + a.d + ' and ' + b.d + ' is ' + m + '.');
+      lines.push(a.tokImp() + ' = {' + x + '/' + m + '} and ' + b.tokImp() + ' = {' + y + '/' + m + '}.');
+      lines.push('{' + x + '/' + m + '} ' + OPWORD[op] + ' {' + y + '/' + m + '} = {' + (op === '+' ? x + y : x - y) + '/' + m + '}.');
+    }
+  } else if (op === 'x' || op === 'of') {
+    if (op === 'of') lines.push('"of" means multiply.');
+    lines.push('Multiply numerators and denominators: ' + a.tokImp() + ' × ' + b.tokImp() + ' = {' + a.n * b.n + '/' + a.d * b.d + '}.');
+  } else {
+    lines.push('Dividing by ' + b.tokImp() + ' is the same as multiplying by its reciprocal ' + b.recip().tokImp() + '.');
+    lines.push(a.tokImp() + ' × ' + b.recip().tokImp() + ' = {' + a.n * b.d + '/' + a.d * b.n + '}.');
+  }
+  lines.push('Simplest form: ' + v.tok() + '.');
+  return lines;
+}
+function solutionFor(e){
+  const { steps, v } = evaluate(e);
+  const out = [];
+  steps.forEach((st, i) => { if (steps.length > 1) out.push('<b>Step ' + (i + 1) + ':</b> ' + st.L.tok() + ' ' + OPWORD[st.op] + ' ' + st.R.tok()); stepLines(st).forEach(l => out.push(l)); });
+  if (steps.length === 0) out.push('The answer is ' + v.tok() + '.');
+  return out;
+}
+
+// ---------- Common mistake detection ----------
+function mistakeCandidates(e){
+  const out = [];
+  let ast; try { ast = unwrap(parseExpr(e)); } catch (_) { return out; }
+  if (ast.k !== 'b') return out;
+  const L = evaluate(exprOf(ast.l)).v, R = evaluate(exprOf(ast.r)).v;
+  const lm = leafMixed(ast.l), rm = leafMixed(ast.r);
+  try {
+    if (ast.op === '+' && L.d !== R.d) out.push({ v: new Frac(L.n + R.n, L.d + R.d), msg: 'You added the denominators too. Can you add ' + pieceName(L.d) + ' and ' + pieceName(R.d) + ' directly? The pieces must be the same size first, so find a common denominator.' });
+    if (ast.op === '-' && L.d !== R.d && L.d - R.d !== 0) out.push({ v: new Frac(L.n - R.n, L.d - R.d), msg: 'You subtracted the denominators. The denominator tells the SIZE of each piece. Make the pieces the same size first.' });
+    if (ast.op === '-') out.push({ v: R.sub(L), msg: 'Check the order. You subtracted the wrong way round.' });
+    if ((ast.op === 'x' || ast.op === 'of') && (lm || rm)) {
+      const a = lm || { w: 0, n: L.n, d: L.d }, b = rm || { w: 0, n: R.n, d: R.d };
+      if (lm && rm) out.push({ v: new Frac(a.w * b.w * a.d * b.d + a.n * b.n, a.d * b.d), msg: 'You multiplied the whole numbers and the fractions separately. That misses the cross parts. Change mixed numbers to improper fractions first.' });
+    }
+    if (ast.op === '÷') {
+      out.push({ v: L.mul(R), msg: 'You multiplied without flipping. Dividing by a fraction means multiplying by its reciprocal.' });
+      if (L.n !== 0) out.push({ v: L.recip().mul(R), msg: 'You flipped the wrong fraction. Keep the first one, flip the one you are dividing BY.' });
+    }
+    if ((ast.op === '+' || ast.op === '-') && (lm || rm) && L.d === R.d) {
+      // forgot to carry when adding mixed numbers: rarely detectable generically
+    }
+  } catch (_) {}
+  return out;
+}
+function pieceName(d){
+  const named = { 1:'wholes', 2:'halves', 3:'thirds', 4:'quarters', 5:'fifths', 6:'sixths', 7:'sevenths', 8:'eighths', 9:'ninths', 10:'tenths', 11:'elevenths', 12:'twelfths' };
+  return named[d] || d + 'ths';
+}
+function exprOf(a){
+  if (a.k === 'n') return a.src;
+  if (a.k === 'g') return '(' + exprOf(a.e) + ')';
+  return exprOf(a.l) + ' ' + (a.op === '÷' ? '÷' : a.op) + ' ' + exprOf(a.r);
+}
+function leafMixed(a){ a = unwrap(a); return a.k === 'n' && a.v.mixed ? a.v.mixed : null; }
+
+// ---------- Answer checking ----------
+// input: {w, n, d} strings (frac) or {x} string (num)
+function readInput(inp){
+  const w = (inp.w || '').trim(), n = (inp.n || '').trim(), d = (inp.d || '').trim();
+  if (inp.x !== undefined) {
+    const x = String(inp.x).trim().replace(/,/g, '');
+    if (!x) return { err: 'Type an answer first.' };
+    if (/^-?\d+(\.\d+)?$/.test(x)) { const [ip, fp = ''] = x.split('.'); const den = Math.pow(10, fp.length); return { f: new Frac(Math.round(parseFloat(x) * den), den), dec: fp.length > 0 }; }
+    try { return { f: F(x.replace(/\s+/g, ' ')) }; } catch (_) { return { err: 'Write a whole number, like 24.' }; }
+  }
+  if (!n && !d && w) { if (!/^-?\d+$/.test(w)) return { err: 'Use digits only.' }; return { f: new Frac(+w, 1), whole: true, wOnly: true }; }
+  if (!n || !d) return { err: 'Fill in both the top and the bottom of the fraction.' };
+  if (![w || '0', n, d].every(s => /^-?\d+$/.test(s))) return { err: 'Use digits only.' };
+  if (+d === 0) return { err: 'A denominator can never be 0. You cannot cut something into 0 pieces.' };
+  const W = +(w || 0), N = +n, D = +d;
+  const f = new Frac(W * D + N, D);
+  return { f, W, N, D, hasW: !!w && W !== 0 };
+}
+
+function checkFrac(q, inp){
+  const r = readInput(inp); if (r.err) return { status: 'invalid', msg: r.err };
+  const exp = q._ans; const f = r.f; const form = q.form || 'any';
+  if (form === 'exact') {
+    const want = q._raw;
+    if (!f.eq(exp)) return wrongWithTraps(q, f);
+    const N = r.hasW ? r.W * r.D + r.N : (r.N !== undefined ? r.N : f.n), D = r.D !== undefined ? r.D : 1;
+    if (N === want.rn && D === want.rd) return { status: 'correct' };
+    return { status: 'wrongform', msg: 'Same value, but the question asks for ' + (q.q.includes('numerator') ? 'that numerator' : 'that denominator') + '. Multiply or divide the top and bottom by the same number to get it.' };
+  }
+  if (!f.eq(exp)) return wrongWithTraps(q, f);
+  // value is right. Now the form.
+  if (r.wOnly) return { status: 'correct' };
+  if (r.hasW && r.N >= r.D) return { status: 'wrongform', msg: 'Right value, but in a mixed number the fraction part must be smaller than 1. Can you carry the extra whole?' };
+  const fracPartReduced = gcd(r.N, r.D) === 1;
+  if (form === 'improper') {
+    if (r.hasW) return { status: 'wrongform', msg: 'Right value. The question wants an improper fraction, so write it with no whole number part.' };
+    if (!fracPartReduced) return { status: 'unsimplified', msg: 'Right value! Can you simplify it?' };
+    return { status: 'correct' };
+  }
+  if (exp.isInt()) return { status: 'unsimplified', msg: 'Right value! But ' + (r.hasW ? '' : '{' + r.N + '/' + r.D + '} ') + 'is a whole number in disguise. Write it as ' + exp.n + '.' };
+  if (!fracPartReduced) return { status: 'unsimplified', msg: 'Right value! The numerator and denominator still share a factor of ' + gcd(r.N, r.D) + '. Simplify it.' };
+  if (form === 'mixed' && !r.hasW && Math.abs(exp.n) > exp.d) return { status: 'wrongform', msg: 'Right value. Now write it as a mixed number (whole number plus a proper fraction).' };
+  if (!r.hasW && Math.abs(exp.n) > exp.d && form !== 'improper') return { status: 'correct', tip: 'Tip: you can also write this as ' + exp.tok() + '.' };
+  return { status: 'correct' };
+}
+function wrongWithTraps(q, f){
+  for (const t of (q._traps || [])) { try { if (F(t.v).eq(f)) return { status: 'wrong', msg: t.msg, trap: true }; } catch (_) {} }
+  return { status: 'wrong' };
+}
+function checkNum(q, inp){
+  const r = readInput({ x: inp.x }); if (r.err) return { status: 'invalid', msg: r.err };
+  if (r.f.eq(q._ans)) return { status: 'correct' };
+  return wrongWithTraps(q, r.f);
+}
+
+// ---------- Open-ended validators ----------
+const VALIDATORS = {
+  between(p, list){ const lo = F(p.lo), hi = F(p.hi); return list.every(f => f.cmp(lo) > 0 && f.cmp(hi) < 0) ? null : 'Each fraction must be bigger than ' + lo.tok() + ' and smaller than ' + hi.tok() + '.'; },
+  equiv(p, list){ const t = F(p.f); for (const f of list) { if (!f.eq(t)) return f.tokRaw() + ' is not equal to ' + t.tok() + '. Multiply top and bottom by the SAME number.'; if (f.rn === t.rn && f.rd === t.rd) return 'Write new fractions, not ' + t.tokRaw() + ' itself.'; } return null; },
+  pairsum(p, pairs){ const s = F(p.s); for (const [a, b] of pairs) { if (!a.add(b).eq(s)) return a.tokRaw() + ' + ' + b.tokRaw() + ' = ' + a.add(b).tok() + ', not ' + s.tok() + '.'; } return null; },
+  equivWithDen(p, list){ const t = F(p.f); for (const f of list) { if (!f.eq(t)) return f.tokRaw() + ' is not equal to ' + t.tok() + '.'; if (f.rd < p.lo || f.rd > p.hi) return 'The denominator must be between ' + p.lo + ' and ' + p.hi + '.'; } return null; },
+};
+function distinct(list){ const seen = new Set(); for (const f of list) { const k = f.rn + '/' + f.rd; if (seen.has(k)) return false; seen.add(k); } return true; }
+
+// Prepare a question: compute answer, traps, solution
+function prepare(q){
+  if (q._ready) return q;
+  try {
+    if (q.e) {
+      const ev = evaluate(q.e); q._ans = ev.v;
+      try { q._raw = F(q.e); } catch (_) { q._raw = ev.v; }
+      if (!q.q) q.q = 'Find: ' + exprToPrompt(q.e);
+      else if (q.q === 'Simplify:' || q.q === 'Evaluate:') q.q = q.q + ' ' + exprToPrompt(q.e);
+      q._traps = (q.traps || []).concat(mistakeCandidates(q.e).filter(c => !c.v.eq(ev.v)).map(c => ({ v: c.v.tokImp().replace(/[{}]/g, ''), msg: c.msg })));
+      if (!q.sol && ev.steps.length) q.sol = solutionFor(q.e);
+      if (q.t === 'num' && !ev.v.isInt()) q.t = 'frac';
+    }
+    if (q.t === 'cmp') { const c = F(q.L).cmp(F(q.R)); q._ans = c < 0 ? '<' : c > 0 ? '>' : '='; if (!q.q) q.q = 'Put the right sign: &lt;, &gt; or ='; }
+    if (q.t === 'yn' && q.a === undefined) q.a = q.q.startsWith('Is {') ? (F(q.L).eq(F(q.R)) && gcd(F(q.L).rn, F(q.L).rd) === 1) : F(q.L).eq(F(q.R));
+    if (q.t === 'order') { const fs = q.items.map(F); q._ans = q.items.map((s, i) => [s, fs[i]]).sort((x, y) => q.dir === 'asc' ? x[1].cmp(y[1]) : y[1].cmp(x[1])).map(x => x[0]); if (!q.q) q.q = 'Arrange in ' + (q.dir === 'asc' ? 'ascending order (smallest first)' : 'descending order (largest first)') + '. Tap them in order.'; }
+    if (q.t === 'line') { q._ans = F(q.e); }
+    if (q.t === 'shade') { q._ans = F(q.e); }
+  } catch (err) { q._broken = String(err); }
+  q._ready = true; return q;
+}
+
+
+
+// ---- book.js
+// Textbook question bank, Chapter 5 Fractions (Class 6 ICSE), Ex 5.1 to 5.11 plus Revision and Objective.
+// Arithmetic answers are NOT typed in here. The engine computes them from `e` (expression) with exact
+// rational arithmetic, so a typo in an answer cannot slip in.
+// Expression syntax: 3/4 is a fraction, 2_1/3 is a mixed number, operators + - x ÷ of ( ) [ ] { }.
+// Prompt syntax: {3/4} renders a stacked fraction, {2 1/3} a mixed number.
+// Types: frac, num, mcq, cmp, order, yn, open, shade, read, line.
+// form: any (default; must still be simplest), lowest, mixed, improper, exact.
+
+const BOOK = {
+  1: [ // Ex 5.1 Meaning of a fraction
+    {id:'1-1a', t:'read', q:'Write the fraction for the shaded part.', fig:{k:'grid',r:2,c:2,s:[0]}, e:'1/4', sk:'meaning'},
+    {id:'1-1b', t:'read', q:'Write the fraction for the shaded part.', fig:{k:'pie',n:8,s:[0,3,5]}, e:'3/8', sk:'meaning'},
+    {id:'1-1c', t:'read', q:'Write the fraction for the shaded part.', fig:{k:'grid',r:1,c:2,s:[0]}, e:'1/2', sk:'meaning'},
+    {id:'1-1d', t:'read', q:'Write the fraction for the shaded part.', fig:{k:'pie',n:4,s:[0,1,3]}, e:'3/4', sk:'meaning'},
+    {id:'1-2a', t:'shade', q:'Shade {3/4} of the figure.', fig:{k:'grid',r:2,c:2}, e:'3/4', sk:'meaning'},
+    {id:'1-2b', t:'shade', q:'Shade {2/3} of the figure.', fig:{k:'grid',r:1,c:3}, e:'2/3', sk:'meaning'},
+    {id:'1-2c', t:'shade', q:'Shade {1/5} of the circle.', fig:{k:'pie',n:5}, e:'1/5', sk:'meaning'},
+    {id:'1-2e', t:'shade', q:'Shade {5/9} of the grid.', fig:{k:'grid',r:3,c:3}, e:'5/9', sk:'meaning'},
+    {id:'1-2f', t:'shade', q:'Shade {7/12} of the counters.', fig:{k:'dots',r:3,c:4}, e:'7/12', sk:'collection'},
+    {id:'1-2g', t:'shade', q:'Shade {7/18} of the grid.', fig:{k:'grid',r:3,c:6}, e:'7/18', sk:'meaning'},
+    {id:'1-2h', t:'shade', q:'Shade {1/2} of the grid.', fig:{k:'grid',r:2,c:4}, e:'1/2', sk:'meaning'},
+    {id:'1-3a', t:'mcq', q:'How do you say {2/3} in words?', opts:['Two thirds','Three halves','Two threes','Third two'], a:0, sk:'meaning'},
+    {id:'1-3c', t:'mcq', q:'How do you say {3/7} in words?', opts:['Seven thirds','Three sevenths','Three sevens','Third seventh'], a:1, sk:'meaning'},
+    {id:'1-3d', t:'mcq', q:'How do you say {4/15} in words?', opts:['Fifteen fourths','Four fifteens','Four fifteenths','Fourteen fifths'], a:2, sk:'meaning'},
+    {id:'1-4', t:'mcq', q:'Which figure does NOT show {1/3} shaded?', figOpts:[{k:'tri3'},{k:'band'},{k:'grid',r:2,c:3,s:[0,5]},{k:'grid',r:1,c:3,s:[1]}], opts:['A','B','C','D'], a:1, why:'In B the three parts of the circle are not equal in size. A fraction needs EQUAL parts.', sk:'meaning'},
+    {id:'1-5a', t:'num', q:'How many {1/3} make one whole?', e:'3', sk:'meaning'},
+    {id:'1-5b', t:'num', q:'How many {1/6} make one whole?', e:'6', sk:'meaning'},
+    {id:'1-6a', t:'frac', q:'What fraction of a day is 6 hours?', e:'6/24', sk:'collection', why:'A day has 24 hours, so 6 hours is {6/24} = {1/4}.'},
+    {id:'1-6b', t:'frac', q:'What fraction of an hour is 15 minutes?', e:'15/60', sk:'collection', why:'An hour has 60 minutes, so 15 minutes is {15/60} = {1/4}.'},
+    {id:'1-6c', t:'frac', q:'What fraction of a year is 1 month?', e:'1/12', sk:'collection'},
+    {id:'1-6d', t:'frac', q:'What fraction of a week is 3 days?', e:'3/7', sk:'collection'},
+    {id:'1-6e', t:'frac', q:'What fraction of the English alphabet is the set of vowels (a, e, i, o, u)?', e:'5/26', sk:'collection'},
+    {id:'1-6f', t:'frac', q:'There are 25 prime numbers from 1 to 100. What fraction of the numbers from 1 to 100 are prime?', e:'25/100', sk:'collection'},
+    {id:'1-7', t:'frac', q:'Leena has 28 stamps. She gives 7 stamps to Meena. What fraction of the stamps does Leena give to Meena?', e:'7/28', sk:'collection'},
+    {id:'1-8a', t:'frac', q:'In a box of 60 mangoes, 12 are rotten. What fraction of the mangoes is fresh?', e:'48/60', sk:'collection', why:'Fresh mangoes = 60 − 12 = 48, so the fraction is {48/60} = {4/5}.'},
+    {id:'1-8b', t:'frac', q:'In a box of 60 mangoes, 12 are rotten. What fraction of the mangoes is rotten?', e:'12/60', sk:'collection'},
+    {id:'1-9', t:'num', q:'Nidhi has 42 chocolates. She gives one third of them to Sarika. How many chocolates are left with Nidhi?', e:'42 - 1/3 of 42', unit:'chocolates', sk:'collection'},
+    {id:'1-10a', t:'frac', q:'A bag has 20 balls: 3 green, 10 red and the rest blue. What fraction of the balls is red?', e:'10/20', sk:'collection'},
+    {id:'1-10b', t:'frac', q:'A bag has 20 balls: 3 green, 10 red and the rest blue. What fraction of the balls is blue?', e:'7/20', sk:'collection', why:'Blue = 20 − 3 − 10 = 7, so blue is {7/20}.'},
+    {id:'1-10c', t:'frac', q:'A bag has 20 balls: 3 green, 10 red and the rest blue. What fraction of the balls is green?', e:'3/20', sk:'collection'},
+    {id:'1-11', t:'frac', q:'Write the natural numbers from 30 to 45. What fraction of these numbers is odd?', e:'8/16', sk:'collection', why:'30 to 45 is 16 numbers. The odd ones are 31, 33, 35, 37, 39, 41, 43, 45, which is 8. So {8/16} = {1/2}.'},
+  ],
+  2: [ // Ex 5.2 Number line
+    {id:'2-1a', t:'line', q:'Mark {1/3} on the number line.', max:1, den:3, e:'1/3', sk:'numline'},
+    {id:'2-1b', t:'line', q:'Mark {1/4} on the number line.', max:1, den:4, e:'1/4', sk:'numline'},
+    {id:'2-1c', t:'line', q:'Mark {3/4} on the number line.', max:1, den:4, e:'3/4', sk:'numline'},
+    {id:'2-1d', t:'line', q:'Mark {2/7} on the number line.', max:1, den:7, e:'2/7', sk:'numline'},
+    {id:'2-2', t:'open', q:'Write three different fractions that lie between 0 and 1.', v:'between', p:{lo:'0',hi:'1'}, n:3, sk:'numline'},
+    {id:'2-3', t:'mcq', q:'How many fractions lie between 0 and 1?', opts:['9','10','100','Infinitely many'], a:3, why:'Between any two fractions you can always find another one, for example by halving the gap. So there is no end to them.', sk:'numline'},
+  ],
+  3: [ // Ex 5.3 Proper and improper
+    {id:'3-1', t:'mcq', q:'Which is a proper fraction?', opts:['{2/3}','{8/6}','{27/13}','{52/11}'], a:0, sk:'proper'},
+    {id:'3-2', t:'mcq', q:'Which is an improper fraction?', opts:['{14/15}','{9/13}','{6/4}','{8/19}'], a:2, sk:'proper'},
+    {id:'3-3', t:'mcq', q:'The proper fraction whose denominator is 3 more than the numerator is', opts:['{1/4}','{7/4}','{1/3}','{3/8}'], a:0, sk:'proper'},
+    {id:'3-4', t:'mcq', q:'The proper fraction whose numerator is the sum of 5 and 6 and denominator is the product of 5 and 6 is', opts:['{5/6}','{11/30}','{1/30}','{30/11}'], a:1, sk:'proper'},
+    {id:'3-5', t:'mcq', q:'The proper fraction whose numerator and denominator add up to 15 is', opts:['{1/15}','15','{7/8}','{8/7}'], a:2, why:'7 + 8 = 15 and 7 is less than 8, so {7/8} is proper. {8/7} also adds to 15 but it is improper.', sk:'proper'},
+    {id:'3-6', t:'mcq', q:'Just by looking at {5/8}, how can you tell if it is less than, equal to or greater than 1?', opts:['Compare the numerator with the denominator','Add the numerator and denominator','Check if the denominator is even','You cannot tell without dividing'], a:0, why:'If the top is smaller than the bottom you have fewer pieces than make a whole, so it is less than 1.', sk:'proper'},
+    {id:'3-7a', t:'cmp', L:'1/2', R:'1', sk:'proper'},
+    {id:'3-7b', t:'cmp', L:'2/3', R:'1', sk:'proper'},
+    {id:'3-7c', t:'cmp', L:'1', R:'4/9', sk:'proper'},
+    {id:'3-7d', t:'cmp', L:'2', R:'8/3', sk:'proper'},
+    {id:'3-7e', t:'cmp', L:'17/5', R:'200/200', sk:'proper'},
+    {id:'3-7f', t:'cmp', L:'0/5', R:'1/7', sk:'proper'},
+    {id:'3-7g', t:'cmp', L:'6/11', R:'305/305', sk:'proper'},
+    {id:'3-7h', t:'cmp', L:'1/4', R:'1/7', sk:'compare'},
+  ],
+  4: [ // Ex 5.4 Mixed fractions
+    {id:'4-1a', t:'frac', q:'Convert {18/5} into a mixed fraction.', e:'18/5', form:'mixed', sk:'mixed'},
+    {id:'4-1b', t:'frac', q:'Convert {46/7} into a mixed fraction.', e:'46/7', form:'mixed', sk:'mixed'},
+    {id:'4-1c', t:'frac', q:'Convert {25/3} into a mixed fraction.', e:'25/3', form:'mixed', sk:'mixed'},
+    {id:'4-1d', t:'frac', q:'Convert {19/8} into a mixed fraction.', e:'19/8', form:'mixed', sk:'mixed'},
+    {id:'4-2a', t:'frac', q:'Convert {8 2/5} into an improper fraction.', e:'8_2/5', form:'improper', sk:'mixed'},
+    {id:'4-2b', t:'frac', q:'Convert {6 1/2} into an improper fraction.', e:'6_1/2', form:'improper', sk:'mixed'},
+    {id:'4-2c', t:'frac', q:'Convert {7 3/20} into an improper fraction.', e:'7_3/20', form:'improper', sk:'mixed'},
+    {id:'4-2d', t:'frac', q:'Convert {11 3/8} into an improper fraction.', e:'11_3/8', form:'improper', sk:'mixed'},
+    {id:'4-3a', t:'line', q:'Mark {5/7} on the number line.', max:1, den:7, e:'5/7', sk:'numline'},
+    {id:'4-3b', t:'line', q:'Mark {2 1/4} on the number line.', max:3, den:4, e:'2_1/4', sk:'numline'},
+    {id:'4-3c', t:'line', q:'Mark {4/3} on the number line.', max:2, den:3, e:'4/3', sk:'numline'},
+    {id:'4-3d', t:'line', q:'Mark {8/5} on the number line.', max:2, den:5, e:'8/5', sk:'numline'},
+    {id:'4-4a', t:'line', q:'Mark {5/4} on the number line.', max:2, den:4, e:'5/4', sk:'numline'},
+    {id:'4-4b', t:'line', q:'Mark {7/6} on the number line.', max:2, den:6, e:'7/6', sk:'numline'},
+  ],
+  5: [ // Ex 5.5 Equivalent fractions
+    {id:'5-1a', t:'frac', q:'The equivalent fraction of {4/11} with denominator 55 is', e:'20/55', form:'exact', sk:'equiv'},
+    {id:'5-1b', t:'frac', q:'The equivalent fraction of {4/11} with numerator 8 is', e:'8/22', form:'exact', sk:'equiv'},
+    {id:'5-1c', t:'frac', q:'The equivalent fraction of {18/27} with denominator 3 is', e:'2/3', form:'exact', sk:'equiv'},
+    {id:'5-1d', t:'frac', q:'The equivalent fraction of {32/104} with numerator 4 is', e:'4/13', form:'exact', sk:'equiv'},
+    {id:'5-2a', t:'read', q:'Write the mixed fraction for the shaded figures.', fig:{k:'row',items:[{k:'pie',n:1,s:[0]},{k:'pie',n:2,s:[0]}]}, e:'1_1/2', form:'mixed', sk:'mixed'},
+    {id:'5-2b', t:'read', q:'Write the mixed fraction for the shaded figures.', fig:{k:'row',items:[{k:'grid',r:1,c:1,s:[0]},{k:'grid',r:1,c:1,s:[0]},{k:'grid',r:2,c:2,s:[0,2,3]}]}, e:'2_3/4', form:'mixed', sk:'mixed'},
+    {id:'5-2c', t:'read', q:'Write the mixed fraction for the shaded figures.', fig:{k:'row',items:[{k:'pie',n:6,s:[0,1,2,3,4,5]},{k:'pie',n:6,s:[0,1,2,3,4,5]},{k:'pie',n:6,s:[0,1,2,3,4,5]},{k:'pie',n:6,s:[0,1,2,3,4]}]}, e:'3_5/6', form:'mixed', sk:'mixed'},
+    {id:'5-2d', t:'read', q:'Write the mixed fraction for the shaded figures.', fig:{k:'row',items:[{k:'grid',r:1,c:1,s:[0]},{k:'grid',r:3,c:1,s:[1,2]}]}, e:'1_2/3', form:'mixed', sk:'mixed'},
+    {id:'5-2e', t:'read', q:'Write the mixed fraction for the shaded figures.', fig:{k:'row',items:[{k:'pie',n:1,s:[0]},{k:'pie',n:1,s:[0]},{k:'pie',n:1,s:[0]},{k:'pie',n:8,s:[0,1,2]}]}, e:'3_3/8', form:'mixed', sk:'mixed'},
+    {id:'5-2f', t:'read', q:'Write the mixed fraction for the shaded figures.', fig:{k:'row',items:[{k:'grid',r:1,c:1,s:[0]},{k:'grid',r:1,c:1,s:[0]},{k:'grid',r:3,c:3,s:[0,2,4,6,8]}]}, e:'2_5/9', form:'mixed', sk:'mixed'},
+    {id:'5-3a', t:'yn', q:'Are {4/19} and {12/57} equivalent?', L:'4/19', R:'12/57', sk:'equiv'},
+    {id:'5-3b', t:'yn', q:'Are {3/8} and {18/48} equivalent?', L:'3/8', R:'18/48', sk:'equiv'},
+    {id:'5-3c', t:'yn', q:'Are {7/15} and {4/9} equivalent?', L:'7/15', R:'4/9', sk:'equiv'},
+    {id:'5-3d', t:'yn', q:'Are {8/13} and {9/14} equivalent?', L:'8/13', R:'9/14', sk:'equiv'},
+    {id:'5-4a', t:'num', q:'Fill the box: {2/5} = ☐/15', e:'6', sk:'equiv'},
+    {id:'5-4b', t:'num', q:'Fill the box: ☐/18 = {5/6}', e:'15', sk:'equiv'},
+    {id:'5-4c', t:'num', q:'Fill the box: {1/8} = ☐/32', e:'4', sk:'equiv'},
+    {id:'5-4d', t:'num', q:'Fill the box: {4/7} = ☐/21', e:'12', sk:'equiv'},
+    {id:'5-4e', t:'num', q:'Fill the box: {5/12} = 60/☐', e:'144', sk:'equiv'},
+  ],
+  6: [ // Ex 5.6 Simplest form
+    {id:'6-1', t:'mcq', q:'Reduce each to simplest form. Which one does NOT have a prime number as its denominator?', opts:['{9/36}','{12/28}','{110/330}','{69/87}'], a:0, why:'{9/36} = {1/4} and 4 is not prime. The others become {3/7}, {1/3} and {23/29}.', sk:'simplest'},
+    {id:'6-2a', t:'frac', q:'Write {27/36} in simplest form.', e:'27/36', form:'lowest', sk:'simplest'},
+    {id:'6-2c', t:'frac', q:'Write {8/26} in simplest form.', e:'8/26', form:'lowest', sk:'simplest'},
+    {id:'6-2d', t:'frac', q:'Write {22/24} in simplest form.', e:'22/24', form:'lowest', sk:'simplest'},
+    {id:'6-2f', t:'frac', q:'Write {3/12} in simplest form.', e:'3/12', form:'lowest', sk:'simplest'},
+    {id:'6-2h', t:'frac', q:'Write {36/42} in simplest form.', e:'36/42', form:'lowest', sk:'simplest'},
+    {id:'6-2j', t:'frac', q:'Write {23/115} in simplest form.', e:'23/115', form:'lowest', sk:'simplest'},
+    {id:'6-2l', t:'frac', q:'Write {8/16} in simplest form.', e:'8/16', form:'lowest', sk:'simplest'},
+    {id:'6-2x', t:'mcq', q:'Which of these is already in simplest form?', opts:['{7/11}','{27/36}','{36/42}','{8/26}'], a:0, sk:'simplest'},
+    {id:'6-3', t:'yn', q:'Box A has 1 of 2 balls shaded, box B has 2 of 4, box C has 3 of 6. Are all these fractions equivalent?', L:'1/2', R:'3/6', sk:'equiv'},
+    {id:'6-4a', t:'yn', q:'Are {3/4} and {21/28} equivalent?', L:'3/4', R:'21/28', sk:'equiv'},
+    {id:'6-4b', t:'yn', q:'Are {8/9} and {8/10} equivalent?', L:'8/9', R:'8/10', sk:'equiv'},
+    {id:'6-4c', t:'yn', q:'Are {3 1/5} and {32/10} equivalent?', L:'3_1/5', R:'32/10', sk:'equiv'},
+    {id:'6-5a', t:'open', q:'Write three equivalent fractions of {6/7}.', v:'equiv', p:{f:'6/7'}, n:3, sk:'equiv'},
+    {id:'6-5b', t:'open', q:'Write three equivalent fractions of {9/13}.', v:'equiv', p:{f:'9/13'}, n:3, sk:'equiv'},
+    {id:'6-6a', t:'frac', q:'Find the equivalent fraction of {4/7} with numerator 100.', e:'100/175', form:'exact', sk:'equiv'},
+    {id:'6-6b', t:'frac', q:'Find the equivalent fraction of {4/7} with numerator 180.', e:'180/315', form:'exact', sk:'equiv'},
+    {id:'6-6c', t:'frac', q:'Find the equivalent fraction of {4/7} with denominator 84.', e:'48/84', form:'exact', sk:'equiv'},
+    {id:'6-6d', t:'frac', q:'Find the equivalent fraction of {4/7} with denominator 175.', e:'100/175', form:'exact', sk:'equiv'},
+    {id:'6-7a', t:'frac', q:'Find the equivalent fraction of {54/72} with numerator 6.', e:'6/8', form:'exact', sk:'equiv'},
+    {id:'6-7b', t:'frac', q:'Find the equivalent fraction of {54/72} with denominator 4.', e:'3/4', form:'exact', sk:'equiv'},
+    {id:'6-8a', t:'yn', q:'Is {4/5} the simplest form of {28/35}?', L:'4/5', R:'28/35', sk:'simplest'},
+    {id:'6-8b', t:'yn', q:'Is {8/9} the simplest form of {40/45}?', L:'8/9', R:'40/45', sk:'simplest'},
+    {id:'6-8c', t:'yn', q:'Is {4/7} the simplest form of {24/56}?', L:'4/7', R:'24/56', sk:'simplest'},
+    ...[['a','36/144'],['b','65/117'],['c','180/120'],['d','440/990'],['e','16/20'],['f','72/120'],['g','36/108'],['h','128/144'],['i','75/125'],['j','45/150'],['k','98/126'],['l','132/156'],['m','45/72'],['n','70/105'],['o','65/260'],['p','36/81']]
+      .map(([l,f]) => ({id:'6-9'+l, t:'frac', q:'Reduce {'+f+'} to its lowest form.', e:f, form:'lowest', sk:'simplest'})),
+    {id:'6-10a', t:'frac', q:'Stuti had 40 toffees. After a week she had 30 left. What fraction of her toffees did she have left?', e:'30/40', sk:'equiv'},
+    {id:'6-10b', t:'yn', q:'Stuti went from 40 to 30 toffees, Arunima from 60 to 45, Alisha from 80 to 60. Did each have the same fraction of toffees left?', a:true, why:'{30/40}, {45/60} and {60/80} all simplify to {3/4}. So yes, each ate {1/4} of her toffees.', sk:'equiv'},
+  ],
+  7: [ // Ex 5.7 Comparing and ordering
+    {id:'7-1a', t:'cmp', L:'4/5', R:'2/5', sk:'compare'},
+    {id:'7-1b', t:'cmp', L:'1', R:'7/5', sk:'compare'},
+    {id:'7-1c', t:'cmp', L:'1/5', R:'1', sk:'compare'},
+    {id:'7-1d', t:'cmp', L:'3/5', R:'0', sk:'compare'},
+    {id:'7-2a', t:'cmp', L:'4/7', R:'6/7', sk:'compare'},
+    {id:'7-2b', t:'cmp', L:'1/9', R:'1/4', sk:'compare'},
+    {id:'7-2c', t:'cmp', L:'4/5', R:'3/5', sk:'compare'},
+    {id:'7-2d', t:'cmp', L:'8/25', R:'11/25', sk:'compare'},
+    {id:'7-3a', t:'cmp', L:'3/4', R:'7/8', sk:'compare'},
+    {id:'7-3b', t:'cmp', L:'6/10', R:'12/15', sk:'compare'},
+    {id:'7-3c', t:'cmp', L:'1/3', R:'1/4', sk:'compare'},
+    {id:'7-3d', t:'cmp', L:'5/7', R:'4/9', sk:'compare'},
+    {id:'7-4', t:'mcq', q:'Parul ran a 200 m race in {2/3} minute and Tanu in {3/5} minute. Who took more time?', opts:['Parul','Tanu','Both took the same time'], a:0, why:'{2/3} = {10/15} and {3/5} = {9/15}. Parul took more time.', sk:'compare'},
+    {id:'7-5', t:'mcq', q:'Shivi read 50 pages of a 200 page book. Vidushi read {1/5} of the same book. Who read less?', opts:['Shivi','Vidushi','Both read the same'], a:1, why:'Shivi read {50/200} = {1/4}. Since {1/5} is less than {1/4}, Vidushi read less.', sk:'compare'},
+    {id:'7-6', t:'mcq', q:'Saurabh finished homework in {5/6} hour and Surbhi in {3/4} hour. Who took less time?', opts:['Saurabh','Surbhi','Both took the same time'], a:1, why:'{5/6} = {10/12} and {3/4} = {9/12}. Surbhi took less time.', sk:'compare'},
+    {id:'7-7', t:'mcq', q:'In VI A, 10 of 40 students scored above 90. In VI B, 6 of 36 did. Which section had the bigger fraction scoring above 90?', opts:['VI A','VI B','Both the same'], a:0, why:'VI A: {10/40} = {1/4}. VI B: {6/36} = {1/6}. {1/4} is bigger.', sk:'compare'},
+    {id:'7-8', t:'mcq', q:'Isha ate 4 of 8 biscuits, Preeti ate 8 of 12 and Diya ate 10 of 15. Who ate the least fraction of her packet?', opts:['Isha','Preeti','Diya'], a:0, why:'Isha {1/2}, Preeti {2/3}, Diya {2/3}. Isha ate the least fraction.', sk:'compare'},
+    {id:'7-9ia', t:'order', items:['5/6','17/6','1/6','9/6','7/6'], dir:'asc', sk:'order'},
+    {id:'7-9ib', t:'order', items:['1/12','1/23','1/4','1/5','1/7','1/50'], dir:'asc', sk:'order'},
+    {id:'7-9ic', t:'order', items:['3/2','1/5','1/4','5/8'], dir:'asc', sk:'order'},
+    {id:'7-9iia', t:'order', items:['1/11','3/11','2/11','11/11','15/11'], dir:'desc', sk:'order'},
+    {id:'7-9iib', t:'order', items:['5/6','5/11','5/8','5/2','5/14','5/19'], dir:'desc', sk:'order'},
+    {id:'7-9iic', t:'order', items:['2/7','2/5','3/14','6/10'], dir:'desc', sk:'order'},
+  ],
+  8: [ // Ex 5.8 Addition and subtraction
+    ...['1/9 + 4/9','1/3 + 2/3','3/7 + 2/7','4/9 + 4/9','1/6 + 2/6 + 7/6','1/4 + 2/4 + 9/4','6/9 + 7/9 + 19/9']
+      .map((e,i) => ({id:'8-1-'+i, t:'frac', e, sk:'addlike'})),
+    {id:'8-3', t:'open', q:'Write two different pairs of fractions whose sum is 1.', v:'pairsum', p:{s:'1'}, n:2, sk:'addunlike'},
+    ...['3/8','1/9','4/5','11/15','8/35','81/100','199/200','997/1000']
+      .map((f,i) => ({id:'8-4-'+i, t:'frac', q:'What should be added to {'+f+'} to get 1?', e:'1 - '+f, sk:'sub'})),
+    ...['1/9 + 1/3','1/8 + 1/24','1/4 + 1/20','1/6 + 1/12','2/14 + 1/7','3/8 + 4/9','3 + 12/5','1_1/4 + 3_3/4','8_2/3 + 5_1/4','11/15 + 7/9 + 8/10','5/15 + 7/18 + 9/36','1_1/3 + 2_3/6 + 3_4/5','6/7 + 1_1/2 + 3_4/5']
+      .map((e,i) => ({id:'8-56-'+i, t:'frac', e, sk:'addunlike'})),
+    ...['15/15 - 1/15','5/9 - 2/9','1 - 3/7','4/5 - 2/5','17/10 - 3/2','3/4 - 3/8','1 - 5/8','1/2 - 1/6','2_1/3 - 1_2/3','3_3/4 - 2_1/5','8_1/4 - 2_5/6','2 - 1_4/7']
+      .map((e,i) => ({id:'8-78-'+i, t:'frac', e, sk:'sub'})),
+    {id:'8-9', t:'frac', q:'Ravi gives {3 1/2} kg grapes to Sonu and {1 3/4} kg to Monu. Find the total quantity of grapes he gave.', e:'3_1/2 + 1_3/4', unit:'kg', sk:'word'},
+    {id:'8-10', t:'frac', q:'Raju got {1/7} of a pizza, his brother Manoj got {2/7} and sister Tina got {3/7}. What fraction of the pizza is left?', e:'1 - (1/7 + 2/7 + 3/7)', sk:'word'},
+    {id:'8-11a', t:'frac', q:'Subtract {3 1/4} from {4 2/3}.', e:'4_2/3 - 3_1/4', sk:'sub'},
+    {id:'8-11b', t:'frac', q:'Subtract {7/18} from {15/27}.', e:'15/27 - 7/18', sk:'sub'},
+    {id:'8-12', t:'frac', q:'A wire {14/15} m long broke into two pieces. One piece was {1/3} m long. How long was the other piece?', e:'14/15 - 1/3', unit:'m', sk:'word'},
+    {id:'8-13', t:'frac', q:'Heena\'s book weighs {4/7} kg and Nidhi\'s weighs {11/14} kg. What is their total weight?', e:'4/7 + 11/14', unit:'kg', sk:'word'},
+    {id:'8-14', t:'frac', q:'Rohan spent {1 1/4} hours on Maths and Science homework and {1/2} hour reading a Hindi book. How much time did he study in all?', e:'1_1/4 + 1/2', unit:'hours', sk:'word'},
+    {id:'8-15', t:'frac', q:'From a {10 3/4} m ribbon, {2 4/5} m is cut. Find the length of the remaining ribbon.', e:'10_3/4 - 2_4/5', unit:'m', sk:'word'},
+    {id:'8-16', t:'frac', q:'Geeta bought {3 1/2} kg potatoes, {2 1/4} kg onions and {1 1/2} kg tomatoes. Find the total weight.', e:'3_1/2 + 2_1/4 + 1_1/2', unit:'kg', sk:'word'},
+    {id:'8-17', t:'frac', q:'Sarika\'s house is {5 2/3} km from her college. She covers {4 1/2} km by Metro and the rest by rickshaw. How far does she go by rickshaw?', e:'5_2/3 - 4_1/2', unit:'km', sk:'word'},
+    {id:'8-18', t:'frac', q:'The perimeter of a triangle is {15 1/7} m. The sum of two of its sides is {9 1/14} m. Find the third side.', e:'15_1/7 - 9_1/14', unit:'m', sk:'word'},
+  ],
+  9: [ // Ex 5.9 Multiplication
+    ...['7/3 x 15','21 x 3/7','4/9 x 72','54 x 5/6'].map((e,i) => ({id:'9-1-'+i, t:'frac', e, sk:'mulwhole'})),
+    {id:'9-2a', t:'num', q:'Express {3/5} of an hour in minutes.', e:'3/5 of 60', unit:'minutes', sk:'mulwhole'},
+    {id:'9-2b', t:'num', q:'Express {5/6} of a year in months.', e:'5/6 of 12', unit:'months', sk:'mulwhole'},
+    {id:'9-2c', t:'num', q:'Express {3/4} of a day in hours.', e:'3/4 of 24', unit:'hours', sk:'mulwhole'},
+    {id:'9-2d', t:'num', q:'Express {1/2} of a rupee in paise.', e:'1/2 of 100', unit:'paise', sk:'mulwhole'},
+    {id:'9-2e', t:'num', q:'Express {4/5} of a minute in seconds.', e:'4/5 of 60', unit:'seconds', sk:'mulwhole'},
+    {id:'9-2f', t:'num', q:'Express {3/8} of a kg in grams.', e:'3/8 of 1000', unit:'g', sk:'mulwhole'},
+    ...['4 x 8_1/8','3 x 5_2/9','9 x 2_4/9'].map((e,i) => ({id:'9-3-'+i, t:'frac', q:'Multiply and write as a mixed fraction: '+exprToPrompt(e), e, form:'mixed', sk:'mulwhole'})),
+    ...['2/5 x 15/4','11/12 x 36/44','7/9 x 27/35','2_1/4 x 5_1/3','2/3 x 5_1/4','6_1/4 x 1_3/5','4_1/2 x 1_1/3','2/3 x 15/26 x 39/45','7 x 1/2 x 3_1/7','1_1/5 x 2_2/7 x 8_3/4']
+      .map((e,i) => ({id:'9-4-'+i, t:'frac', e, sk:'mulfrac'})),
+    {id:'9-5', t:'frac', q:'Mohan covers {70 1/3} km in 1 hour by car. How far will he go in 6 hours?', e:'70_1/3 x 6', unit:'km', sk:'word'},
+    {id:'9-6', t:'num', q:'Armaan spends {4/5} of his income on household expenses. His monthly income is ₹20,000. How much does he save every month?', e:'20000 - 4/5 of 20000', unit:'₹', sk:'word'},
+    {id:'9-7', t:'frac', q:'The side of an equilateral triangle is {4 2/3} cm. Find its semiperimeter (half the perimeter).', e:'(3 x 4_2/3) ÷ 2', unit:'cm', sk:'word'},
+    {id:'9-8', t:'num', q:'A scooter runs 21 km on one litre of petrol. How far will it go on {5 1/3} litres?', e:'21 x 5_1/3', unit:'km', sk:'word'},
+    {id:'9-9', t:'num', q:'1 kg tomatoes costs ₹{21 1/3}. Find the cost of {4 1/2} kg.', e:'21_1/3 x 4_1/2', unit:'₹', sk:'word'},
+    {id:'9-10', t:'num', q:'Find the area of a rectangular park {9 1/3} m long and {7 1/2} m wide.', e:'9_1/3 x 7_1/2', unit:'m²', sk:'word'},
+  ],
+  10: [ // Ex 5.10 Division
+    ...['15 ÷ 3/5','12 ÷ 2/3','20 ÷ 3_1/3','33 ÷ 3_1/7','15/8 ÷ 5','8/7 ÷ 4','4_1/2 ÷ 6','2_3/7 ÷ 34','7/9 ÷ 14/3','5/6 ÷ 25/36','3_1/2 ÷ 7/4','2_3/5 ÷ 1_4/35']
+      .map((e,i) => ({id:'10-123-'+i, t:'frac', e, sk:'div'})),
+    {id:'10-4', t:'num', q:'The product of two numbers is 42. One number is {2 4/5}. Find the other.', e:'42 ÷ 2_4/5', sk:'div'},
+    {id:'10-5', t:'num', q:'By what number should {3/10} be multiplied to get {1 4/5}?', e:'1_4/5 ÷ 3/10', sk:'div'},
+    {id:'10-6', t:'frac', q:'The area of a rectangle is 42 cm². Its breadth is {2 2/13} cm. Find its length.', e:'42 ÷ 2_2/13', unit:'cm', sk:'word'},
+    {id:'10-7', t:'num', q:'The product of two numbers is {12 3/4}. One of them is {2 1/8}. Find the other.', e:'12_3/4 ÷ 2_1/8', sk:'div'},
+    {id:'10-8', t:'num', q:'{5 1/2} kg of grapes costs ₹330. What is the cost of 1 kg?', e:'330 ÷ 5_1/2', unit:'₹', sk:'word'},
+    {id:'10-9', t:'frac', q:'A ribbon {6 1/4} m long is cut into 5 equal pieces. Find the length of each piece.', e:'6_1/4 ÷ 5', unit:'m', sk:'word'},
+    {id:'10-10', t:'num', q:'A car travels 208 km in {4 1/3} hours. How far does it go in 1 hour?', e:'208 ÷ 4_1/3', unit:'km', sk:'word'},
+    {id:'10-11', t:'num', q:'A lady took ₹2000 to the market. She spent {1/4} on fruits and vegetables and {2/5} on provisions. How much money was left?', e:'2000 - (1/4 of 2000 + 2/5 of 2000)', unit:'₹', sk:'word'},
+    {id:'10-12', t:'num', q:'In a garden of 360 plants, {1/4} are roses, {2/3} are jasmine and the rest are hibiscus. How many hibiscus plants are there?', e:'360 - (1/4 of 360 + 2/3 of 360)', unit:'plants', sk:'word'},
+    {id:'10-13', t:'num', q:'A basket had 10 dozen mangoes. {1/15} got spoilt and {1/3} were eaten. How many mangoes are left?', e:'120 - (1/15 of 120 + 1/3 of 120)', unit:'mangoes', sk:'word'},
+    {id:'10-14', t:'num', q:'A rope 28 m long is cut into pieces {1 3/4} m long. How many pieces are made?', e:'28 ÷ 1_3/4', unit:'pieces', sk:'word'},
+  ],
+  11: [ // Ex 5.11 Simplification (BODMAS)
+    ...['3_1/5 ÷ 2_3/5 of 1_1/2','(3 - 1/3) of (4 - 1/4)','1/12 of 1_1/2 ÷ 3/4','(11/169 ÷ 121/225) ÷ 15/13','(1_3/4 - 5/8) ÷ 1_1/4','4/9 + 5/14 ÷ 2_1/7','2/5 of 25/16 - (3 - 2_1/2)','3/5 of 1_7/8 - (2_1/4 - 1_3/8)']
+      .map((e,i) => ({id:'11-'+(i+1), t:'frac', q:'Simplify:', e, sk:'bodmas'})),
+  ],
+  12: [ // Revision and Objective questions (Boss island)
+    ...['10 + 3_5/7 - 5_2/21','1_3/4 + 2_5/7 - 1_3/14','8 - 3_1/2 - 2_1/5','2_3/10 + 1_4/5 - 1_1/4 - 9/20','3_5/6 - 1_7/9 + 1_2/3']
+      .map((e,i) => ({id:'R-1-'+i, t:'frac', q:'Evaluate:', e, sk:'addunlike'})),
+    ...['7/25 x 75/56','2_3/5 x 20/39','5_2/5 x 3_1/3','22/35 ÷ 33/28','5/12 ÷ 35/36','2_4/5 ÷ 3_4/15']
+      .map((e,i) => ({id:'R-2-'+i, t:'frac', q:'Simplify:', e, sk:'mulfrac'})),
+    {id:'R-3', t:'frac', q:'Rahul carried 3 bags weighing {11 1/5} kg, {5 3/10} kg and {6 4/15} kg. Find the total weight.', e:'11_1/5 + 5_3/10 + 6_4/15', unit:'kg', sk:'word'},
+    {id:'R-4', t:'num', q:'1 litre of milk costs ₹{32 1/4}. Find the cost of 24 litres.', e:'32_1/4 x 24', unit:'₹', sk:'word'},
+    {id:'R-5', t:'frac', q:'Ravi walks {4 1/2} km in an hour. How far does he walk in {2 1/3} hours?', e:'4_1/2 x 2_1/3', unit:'km', sk:'word'},
+    {id:'R-6', t:'frac', q:'A rope {2 14/15} m long is cut into 11 equal pieces. Find the length of each piece.', e:'2_14/15 ÷ 11', unit:'m', sk:'word'},
+    {id:'R-7', t:'num', q:'Avlok took ₹240 to the market. He spent {1/3} of it on vegetables and {1/4} of the REMAINING money on fruits. How much is left?', e:'(240 - 1/3 of 240) - 1/4 of (240 - 1/3 of 240)', unit:'₹', sk:'word'},
+    {id:'R-9', t:'num', q:'A man earns ₹17,200 a month. He spends {2/5} on food, {3/10} on rent, {1/50} on children\'s education and {6/25} on others. How much does he save?', e:'17200 - (2/5 + 3/10 + 1/50 + 6/25) of 17200', unit:'₹', sk:'word'},
+    {id:'R-10', t:'num', q:'A boy had 120 chocolates. He gave {2/5} to his sister and {1/6} to his best friend. How many are left with him?', e:'120 - (2/5 of 120 + 1/6 of 120)', unit:'chocolates', sk:'word'},
+    {id:'O-A1', t:'mcq', q:'Which of these are like fractions?', opts:['{3/5}, {1/5}','{7/3}, {7/4}','{5/7}, {7/5}','{8/3}, {8/5}'], a:0, sk:'compare'},
+    {id:'O-A2', t:'mcq', q:'The fraction {4/5} lies between which two whole numbers?', opts:['4 and 5','3 and 4','1 and 2','0 and 1'], a:3, sk:'numline'},
+    {id:'O-A3', t:'mcq', q:'Which pair of fractions is equivalent?', opts:['{14/21}, {4/12}','{16/24}, {6/9}','{36/45}, {6/10}','{6/8}, {21/56}'], a:1, sk:'equiv'},
+    {id:'O-A4', t:'mcq', q:'The fraction equivalent to {35/63} is', opts:['{15/36}','{40/54}','{25/45}','{30/72}'], a:2, sk:'equiv'},
+    {id:'O-A5', t:'mcq', q:'Which fraction is in simplest form?', opts:['{81/117}','{39/52}','{84/119}','{37/43}'], a:3, sk:'simplest'},
+    {id:'O-A6', t:'mcq', q:'Which fraction is the smallest?', opts:['{7/9}','{7/3}','{7/11}','{7/5}'], a:2, sk:'compare'},
+    {id:'O-A7', t:'mcq', q:'Which fraction is the largest?', opts:['{3/8}','{3/5}','{3/7}','{3/11}'], a:1, sk:'compare'},
+    {id:'O-A8', t:'frac', q:'Find {8/11} − {7/33}.', e:'8/11 - 7/33', sk:'sub'},
+    {id:'O-A9', t:'frac', q:'Find {5/8} + {3/16}.', e:'5/8 + 3/16', sk:'addunlike'},
+    {id:'O-A10', t:'mcq', q:'Which of these is a mixed fraction?', opts:['{2 4/3}','{5/8}','{1 3/5}','{8/7}'], a:2, why:'In a mixed fraction the fraction part must be proper. {2 4/3} has an improper part, so it is not written correctly.', sk:'mixed'},
+    {id:'O-A11', t:'num', q:'{4/5} of an hour in minutes is', e:'4/5 of 60', unit:'minutes', sk:'mulwhole'},
+    {id:'O-A12', t:'num', q:'One quarter of 720 is', e:'1/4 of 720', sk:'mulwhole'},
+    {id:'O-A13', t:'frac', q:'Write {120/140} in simplest form.', e:'120/140', form:'lowest', sk:'simplest'},
+    {id:'O-A15', t:'frac', q:'Nitin gets {3/7} share and Neha gets {5/14} share. What share is left?', e:'1 - (3/7 + 5/14)', sk:'word'},
+    {id:'O-A17', t:'num', q:'Find K: {1/9} + {2/9} + K/9 = {1 1/9}', e:'7', sk:'addlike'},
+    {id:'O-B1', t:'frac', q:'Express {47/3} as a mixed fraction.', e:'47/3', form:'mixed', sk:'mixed'},
+    {id:'O-B2', t:'frac', q:'Write the improper form of {7 2/9}.', e:'7_2/9', form:'improper', sk:'mixed'},
+    {id:'O-B3', t:'frac', q:'The equivalent fraction of {4/15} with denominator 135 is', e:'36/135', form:'exact', sk:'equiv'},
+    {id:'O-B4', t:'order', items:['5/7','5/13','5/2','5/3','5/19','5/4'], dir:'asc', sk:'order'},
+    {id:'O-B5', t:'order', items:['4/11','3/11','15/11','18/11','1/11','26/11'], dir:'desc', sk:'order'},
+    {id:'O-B6', t:'frac', q:'Write {56/126} in reduced form.', e:'56/126', form:'lowest', sk:'simplest'},
+    {id:'O-C1', t:'num', q:'Raj studied for {2/3} hour and Shilpa for {3/4} hour. Shilpa studied longer. By how many MINUTES?', e:'(3/4 - 2/3) of 60', unit:'minutes', sk:'word'},
+    {id:'O-C2', t:'frac', q:'By how much is {19/30} greater than {3/10}?', e:'19/30 - 3/10', sk:'sub'},
+    {id:'O-D1', t:'frac', q:'Fill the box: ☐ + {4/9} = {6/9}', e:'6/9 - 4/9', sk:'addlike'},
+    {id:'O-D3', t:'frac', q:'Fill the box: ☐ − {3/17} = {5/17}', e:'5/17 + 3/17', sk:'sub'},
+    {id:'O-D4', t:'num', q:'Fill the box: ☐ + {4/5} = {5 4/5}', e:'5', sk:'addlike'},
+    {id:'O-D5', t:'frac', q:'Fill the box: ☐ − {5/8} = {1/4}', e:'1/4 + 5/8', sk:'sub'},
+    {id:'O-D6', t:'frac', q:'Fill the box: {7/2} ÷ {63/16} = ☐', e:'7/2 ÷ 63/16', sk:'div'},
+    {id:'O-E1', t:'mcq', q:'Assertion: {7/4} lies between 1 and 2.<br>Reason: There are infinitely many fractions between any 2 numbers.', opts:ARopts(), a:1, why:'Both are true, but the reason does not explain why {7/4} is between 1 and 2. The real reason is that {7/4} = {1 3/4}.', sk:'numline'},
+    {id:'O-E2', t:'mcq', q:'Assertion: {77/132} = {7/12}.<br>Reason: To simplify a fraction we divide its numerator and denominator by their LCM.', opts:ARopts(), a:2, why:'{77/132} ÷ 11 gives {7/12}, so A is true. We divide by the HCF, not the LCM, so R is false.', sk:'simplest'},
+    {id:'O-E3', t:'mcq', q:'Assertion: {4/8} = {28/56}.<br>Reason: An equivalent fraction can be made by ADDING the same number to the numerator and denominator.', opts:ARopts(), a:2, why:'{4/8} × 7/7 = {28/56}, so A is true. Adding the same number changes the value ({1/2} becomes {2/3} if you add 1), so R is false.', sk:'equiv'},
+    {id:'O-E4', t:'mcq', q:'Assertion: ({1/2} + 2) × 2 = 5.<br>Reason: The distributive property holds for fractions.', opts:ARopts(), a:0, why:'{1/2} × 2 + 2 × 2 = 1 + 4 = 5. The distributive property is exactly what makes this work.', sk:'bodmas'},
+    {id:'O-E5', t:'mcq', q:'Assertion: The product of 2 proper fractions is always less than 1.<br>Reason: Proper fractions are less than one, so their product is also less than 1.', opts:ARopts(), a:0, why:'Taking a part of a part always gives less than the whole.', sk:'mulfrac'},
+    {id:'O-E6', t:'mcq', q:'Assertion: When a fraction is divided by its reciprocal, the result is 1.<br>Reason: The product of a fraction and its reciprocal is 1.', opts:ARopts(), a:3, why:'{2/3} ÷ {3/2} = {2/3} × {2/3} = {4/9}, not 1. So A is false. R is true.', sk:'div'},
+  ],
+};
+
+function ARopts(){ return ['Both A and R are true, and R is the correct reason for A','Both A and R are true, but R is NOT the correct reason for A','A is true but R is false','A is false but R is true']; }
+
+// ---- learn.js
+// World definitions and first-principles concept cards
+const WORLDS = [
+  null,
+  { ex:'5.1', name:'Slice Shore', topic:'What a fraction means', color:'coral' },
+  { ex:'5.2', name:'Number Line Ridge', topic:'Fractions on the number line', color:'teal' },
+  { ex:'5.3', name:'Proper Peak', topic:'Proper and improper fractions', color:'butter' },
+  { ex:'5.4', name:'Mixed Meadow', topic:'Mixed fractions', color:'lilac' },
+  { ex:'5.5', name:'Twin Lagoon', topic:'Equivalent fractions', color:'coral' },
+  { ex:'5.6', name:'Simple Springs', topic:'Simplest form', color:'teal' },
+  { ex:'5.7', name:'Compare Cliffs', topic:'Comparing and ordering', color:'butter' },
+  { ex:'5.8', name:'Plus Minus Bay', topic:'Adding and subtracting', color:'lilac' },
+  { ex:'5.9', name:'Times Tower', topic:'Multiplying fractions', color:'coral' },
+  { ex:'5.10', name:'Flip Falls', topic:'Dividing fractions', color:'teal' },
+  { ex:'5.11', name:'BODMAS Bridge', topic:'Simplifying expressions', color:'butter' },
+  { ex:'Boss', name:'Crown Island', topic:'Revision and objective questions', color:'lilac' },
+];
+
+const LEARN = {
+  1: { fig:{k:'pie',n:4,s:[0]}, big:'A fraction is a part of a whole that has been cut into EQUAL parts.', pts:[
+      'The <b>denominator</b> (bottom) says how many equal parts the whole is cut into.',
+      'The <b>numerator</b> (top) says how many of those parts you take.',
+      'The whole can be one thing (a cake) or a group (20 stamps). {1/4} of 20 stamps means split 20 into 4 equal groups and take 1 group: 5 stamps.',
+      'If the parts are not equal, it is not a fraction of the whole. Always check the sizes.' ],
+    ask:'If {3/4} of a class is 18 children, how many children is {1/4}? How many in the whole class?' },
+  2: { fig:{k:'nl',max:1,den:5,at:3}, big:'Every fraction is a point on the number line.', pts:[
+      'To show {3/5}, cut the gap from 0 to 1 into 5 equal jumps. Then make 3 jumps from 0.',
+      'The denominator decides the jump size. The numerator decides how many jumps.',
+      'Improper fractions just keep jumping past 1. {7/5} is 7 jumps of {1/5}, which lands after 1.',
+      'Between any two fractions there is always another one. Cut the jumps smaller and new points appear.' ],
+    ask:'Is {2/4} at the same point as {1/2}? Draw both lines and check.' },
+  3: { fig:{k:'row',items:[{k:'pie',n:4,s:[0,1,2]},{k:'pie',n:4,s:[0,1,2,3]},{k:'pie',n:4,s:[0]}]}, big:'Compare the top with the bottom to know if a fraction is less than, equal to, or more than 1.', pts:[
+      '<b>Proper</b>: top smaller than bottom, like {3/4}. You have fewer pieces than one whole needs. Less than 1.',
+      'Top equal to bottom, like {4/4}, is exactly 1 whole.',
+      '<b>Improper</b>: top equal to or bigger than bottom, like {5/4}. You have enough pieces for a whole and more.',
+      'You can decide this just by looking. No working needed.' ],
+    ask:'Can a proper fraction ever be bigger than an improper one? Why not?' },
+  4: { fig:{k:'row',items:[{k:'pie',n:3,s:[0,1,2]},{k:'pie',n:3,s:[0,1,2]},{k:'pie',n:3,s:[0]}]}, big:'A mixed fraction is wholes plus a leftover proper fraction.', pts:[
+      '{7/3} means 7 pieces of {1/3}. Every 3 pieces make a whole, so 7 pieces is 2 wholes and 1 piece left: {2 1/3}.',
+      'Improper to mixed: divide. Quotient is the wholes, remainder goes on top, denominator stays.',
+      'Mixed to improper: wholes × denominator + numerator. {2 1/3} = (2 × 3 + 1)/3 = {7/3}.',
+      'The fraction part of a mixed number must be proper. {2 4/3} is not finished: it is really {3 1/3}.' ],
+    ask:'7 rotis are shared by 3 friends. Why is the answer a mixed number?' },
+  5: { fig:{k:'row',items:[{k:'grid',r:1,c:2,s:[0]},{k:'grid',r:2,c:2,s:[0,2]},{k:'grid',r:2,c:4,s:[0,1,4,5]}]}, big:'Equivalent fractions are different names for the same amount.', pts:[
+      '{1/2}, {2/4} and {4/8} cover the same area. Cutting each piece into smaller pieces does not change how much you have.',
+      'Multiply OR divide the top and bottom by the same number. The value stays the same.',
+      'Adding the same number to top and bottom does NOT work. {1/2} and {2/3} are different amounts.',
+      'Check if two fractions are equal by cross multiplying: {2/3} and {8/12} give 2 × 12 = 24 and 8 × 3 = 24. Equal!' ],
+    ask:'Why does multiplying top and bottom by 3 not change the value? Think of cutting every piece into 3.' },
+  6: { fig:{k:'grid',r:3,c:4,s:[0,1,2,4,5,6,8,9,10]}, big:'Simplest form means the top and bottom share no common factor except 1.', pts:[
+      'Divide the top and bottom by a common factor, and keep going until you cannot.',
+      'Fastest: divide once by the HCF. {72/81}: HCF is 9, so {72/81} = {8/9}.',
+      'Your final answer should ALWAYS be in simplest form. {3/3} is just 1, and {12/4} is just 3.',
+      'Simplifying makes it easy to see if two fractions are equal: {4/16} and {5/20} are both {1/4}.' ],
+    ask:'Is {21/35} in simplest form? Which number divides both?' },
+  7: { fig:{k:'row',items:[{k:'grid',r:1,c:3,s:[0]},{k:'grid',r:1,c:5,s:[0]}]}, big:'To compare fractions, make the pieces the same size, or use cross multiplication.', pts:[
+      'Same denominator: bigger numerator wins. {5/7} > {3/7}.',
+      'Same numerator: SMALLER denominator wins, because the pieces are bigger. {1/3} > {1/5}.',
+      'Different everything: change to a common denominator (LCM), or cross multiply. For {5/11} and {4/9}: 5 × 9 = 45, 4 × 11 = 44, so {5/11} is bigger.',
+      'Quick check: compare with {1/2}. {7/15} is just under half, {9/16} is just over.' ],
+    ask:'Which is bigger, {7/8} or {8/9}? Hint: how far is each one from 1?' },
+  8: { fig:{k:'row',items:[{k:'pie',n:2,s:[0]},{k:'pie',n:4,s:[0]},{k:'pie',n:4,s:[0,1,2]}]}, big:'You can only add or subtract pieces of the same size.', pts:[
+      'Same denominator: add or subtract the numerators. The denominator stays (the piece size does not change).',
+      'Different denominators: first rewrite both with the LCM as the denominator, then add.',
+      'NEVER add the denominators. {1/2} + {1/4} is not {2/6}. That would be smaller than {1/2}!',
+      'Mixed numbers: change to improper fractions, or add wholes and fractions separately. "Subtract A from B" means B − A.' ],
+    ask:'Riya says {1/3} + {1/3} = {2/6}. Draw it. What went wrong?' },
+  9: { fig:{k:'grid',r:3,c:5,s:[0,1,2,3,5,6,7,8]}, big:'Multiplying by a fraction means taking that fraction OF something.', pts:[
+      '{2/3} × {4/5} means {2/3} of {4/5}. The picture shows {4/5} cut into thirds, taking 2 of them: {8/15}.',
+      'Rule: top × top, bottom × bottom. Cancel common factors first to keep numbers small.',
+      'Mixed numbers: change to improper first. Do NOT multiply wholes and fractions separately.',
+      'Multiplying by a proper fraction makes a number SMALLER. Half of 10 is 5.' ],
+    ask:'Is {3/4} × 20 more or less than 20? Decide before you calculate.' },
+  10: { fig:{k:'row',items:[{k:'pie',n:2,s:[0,1]}]}, big:'Dividing asks: how many of these fit into that?', pts:[
+      '1 ÷ {1/2} = 2, because two halves fit into 1.',
+      'The <b>reciprocal</b> of {a/b} is {b/a}. A fraction times its reciprocal is 1.',
+      'To divide, keep the first fraction and multiply by the reciprocal of the second.',
+      'Dividing by a proper fraction makes a number BIGGER. 6 ÷ {1/2} = 12, since 12 halves fit into 6.' ],
+    ask:'How many {3/4} m pieces can you cut from 6 m of ribbon?' },
+  11: { fig:null, big:'BODMAS tells you the order: Brackets, Of, Division and Multiplication, Addition and Subtraction.', pts:[
+      'Brackets first, innermost first: ( ), then { }, then [ ].',
+      '"Of" means multiply, but it is done before ordinary × and ÷.',
+      'Then × and ÷ from left to right. Then + and − from left to right.',
+      'Write each step on a new line. Most mistakes come from doing two steps at once.' ],
+    ask:'In {1/2} + {1/2} × 4, what do you do first?' },
+  12: { fig:null, big:'Crown Island mixes everything. Read each question slowly before choosing a method.', pts:[
+      'Ask yourself: what is the whole? What is the part?',
+      'Estimate first. Should the answer be more or less than 1? Bigger or smaller than the starting number?',
+      'Always simplify the final answer.',
+      'Check your answer in a different way if you can (draw it, or work backwards).' ],
+    ask:'Pick any wrong answer from today and explain to someone why it was wrong.' },
+};
+
+// ---- gen.js
+// Fresh question generators. Level 2 = core practice with new numbers. Level 3 = twists that force first principles thinking.
+const R = {
+  int(a, b){ return a + Math.floor(Math.random() * (b - a + 1)); },
+  pick(a){ return a[Math.floor(Math.random() * a.length)]; },
+  shuffle(a){ a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; },
+  coprime(lo, hi, d){ let n; do { n = R.int(lo, hi); } while (gcd(n, d) !== 1); return n; },
+  sample(n, k){ return R.shuffle([...Array(n).keys()]).slice(0, k); },
+};
+const NAMES = ['Aarav','Diya','Kabir','Ira','Vihaan','Anaya','Reyansh','Myra','Arjun','Saanvi','Ishaan','Kiara','Rohan','Tara','Neel','Zoya'];
+const nm = () => (typeof PLAYER !== 'undefined' && PLAYER.name && Math.random() < 0.3) ? PLAYER.name : R.pick(NAMES);
+const fs = (n, d) => n + '/' + d;                    // fraction source string
+const tk = (n, d) => '{' + n + '/' + d + '}';        // prompt token
+const mx = (w, n, d) => w + '_' + n + '/' + d;       // mixed source
+const tkm = (w, n, d) => '{' + w + ' ' + n + '/' + d + '}';
+const properFrac = (dLo = 2, dHi = 12) => { const d = R.int(dLo, dHi); return [R.coprime(1, d - 1, d), d]; };
+const fig = { grid: (r, c, s = []) => ({ k: 'grid', r, c, s }), pie: (n, s = []) => ({ k: 'pie', n, s }) };
+
+function randomShape(n){ // a figure with n equal parts
+  const opts = [];
+  for (let r = 1; r <= 4; r++) if (n % r === 0 && n / r <= 6) opts.push(fig.grid(r, n / r));
+  if (n <= 10) opts.push(fig.pie(n));
+  return R.pick(opts);
+}
+
+const GEN = {
+  // ===================== World 1: meaning of a fraction =====================
+  1: {
+    L2: [
+      () => { const d = R.pick([3,4,5,6,8,9,10,12]); const n = R.int(1, d - 1); const f = randomShape(d); f.s = R.sample(d, n);
+        return { t:'read', q:'What fraction of the shape is shaded?', fig:f, e:fs(n, d), sk:'meaning', hint:['Count ALL the equal parts. That is the denominator.','Count the shaded parts. That is the numerator.'] }; },
+      () => { const [n, d] = R.pick([[1,2],[1,3],[2,3],[1,4],[3,4],[2,5],[3,5],[5,6]]); const k = R.pick([2,3]); const total = d * k; const f = randomShape(total);
+        return { t:'shade', q:'Shade ' + tk(n, d) + ' of this shape. Careful, it has ' + total + ' parts.', fig:f, e:fs(n, d), sk:'meaning', hint:['The shape has ' + total + ' parts, not ' + d + '.','Split the ' + total + ' parts into ' + d + ' equal groups. How many parts are in one group?','One group is ' + k + ' parts. You need ' + n + ' groups.'] }; },
+      () => { const c = R.pick([['hours','a day',24],['minutes','an hour',60],['months','a year',12],['days','a week',7],['paise','a rupee',100],['centimetres','a metre',100],['grams','a kilogram',1000],['seconds','a minute',60]]);
+        const ks = { 24:[2,3,4,6,8,12,16,18,20], 60:[5,10,12,15,20,30,40,45,50], 12:[2,3,4,5,6,7,8,9,10], 7:[1,2,3,4,5,6], 100:[5,10,20,25,40,50,75,80], 1000:[100,125,200,250,500,750] }[c[2]];
+        const k = R.pick(ks); return { t:'frac', q:'What fraction of ' + c[1] + ' is ' + k + ' ' + c[0] + '?', e:fs(k, c[2]), sk:'collection', hint:['How many ' + c[0] + ' are there in ' + c[1] + '? That is the whole.','The part is ' + k + ' out of ' + c[2] + '. Now simplify.'] }; },
+      () => { const d = R.pick([3,4,5,6,8]); const n = R.int(1, d - 1); const N = d * R.int(3, 12); const who = nm(); const thing = R.pick(['stickers','marbles','pencils','chocolates','stamps','cards']);
+        return { t:'num', q: who + ' has ' + N + ' ' + thing + ' and gives away ' + tk(n, d) + ' of them. How many are left?', e: N + ' - ' + fs(n, d) + ' of ' + N, unit:thing, sk:'collection', hint:['First find ' + tk(1, d) + ' of ' + N + ': split ' + N + ' into ' + d + ' equal groups.','One group is ' + N / d + '. So ' + tk(n, d) + ' is ' + n + ' groups.','Do not stop there. The question asks how many are LEFT.'] }; },
+    ],
+    L3: [
+      () => { const eq = Math.random() < 0.4; const parts = eq ? [1,1,1] : R.pick([[2,1,1],[1,2,1],[3,1,2],[1,1,2]]); const s = R.int(0, 2);
+        return { t:'yn', q:'Is the shaded part {1/3} of the whole strip?', fig:{ k:'strip', w:parts, s:[s] }, a:eq, sk:'meaning', why: eq ? 'All three parts are the same size, so one part is {1/3}.' : 'The parts are NOT equal in size. A fraction only works when the whole is cut into equal parts.', hint:['Look at the SIZE of each part, not just how many parts there are.'] }; },
+      () => { const d = R.pick([3,4,5,6,8]); const n = R.int(1, d - 1); const unit = R.int(2, 9); const part = n * unit; const what = R.pick([['students','a class'],['pages','a book'],['beads','a necklace'],['kids','a bus']]);
+        return { t:'num', q:tk(n, d) + ' of ' + what[1] + ' is ' + part + ' ' + what[0] + '. How many ' + what[0] + ' are in the whole of ' + what[1] + '?', e: part + ' ÷ ' + fs(n, d), unit:what[0], sk:'collection', hint:[tk(n, d) + ' means ' + n + ' equal parts out of ' + d + '.','If ' + n + ' parts make ' + part + ', one part is ' + part + ' ÷ ' + n + ' = ' + unit + '.','The whole has ' + d + ' parts.'], why: 'One part is ' + part + ' ÷ ' + n + ' = ' + unit + '. The whole is ' + d + ' parts, so ' + d + ' × ' + unit + ' = ' + d * unit + '.' }; },
+      () => { const d = R.pick([4,5,6,8,9,10,12]); const n = R.int(1, d - 1); const f = randomShape(d); f.s = R.sample(d, n);
+        return { t:'read', q:'What fraction of the shape is NOT shaded?', fig:f, e:fs(d - n, d), sk:'meaning', hint:['Read the question again. NOT shaded.','Shaded plus not shaded makes the whole, which is 1.'] }; },
+      () => { const [n, d] = R.pick([[3,4],[1,2],[2,3],[5,6],[3,5],[1,4]]); const k = R.pick([2,3,4]); const small = d * k;
+        return { t:'num', q:'How many ' + tk(1, small) + ' pieces make ' + tk(n, d) + '?', e: fs(n, d) + ' ÷ ' + fs(1, small), sk:'meaning', hint:['How many ' + tk(1, small) + ' pieces make one whole?','Each ' + tk(1, d) + ' is the same as ' + k + ' pieces of ' + tk(1, small) + '.'] }; },
+      () => { const d = R.pick([3,4,5,6]); const n = R.int(1, d - 1); const per = R.int(2, 5); const shown = n * per;
+        return { t:'num', q:'A chocolate bar is broken. The piece you have is ' + tk(n, d) + ' of the bar and has ' + shown + ' squares. How many squares were in the whole bar?', e: shown + ' ÷ ' + fs(n, d), unit:'squares', sk:'meaning', hint:['Your piece is ' + n + ' out of ' + d + ' equal parts.','One part has ' + shown + ' ÷ ' + n + ' squares.'] }; },
+    ],
+  },
+  // ===================== World 2: number line =====================
+  2: {
+    L2: [
+      () => { const d = R.int(3, 10); const n = R.int(1, d - 1); return { t:'line', q:'Mark ' + tk(n, d) + ' on the number line.', max:1, den:d, e:fs(n, d), sk:'numline', hint:['The space from 0 to 1 is cut into ' + d + ' equal jumps.','Start at 0 and make ' + n + ' jumps.'] }; },
+      () => { const d = R.int(3, 10); const n = R.int(1, d - 1); return { t:'read', q:'Which fraction is marked with the dot?', fig:{ k:'nl', max:1, den:d, at:n }, e:fs(n, d), sk:'numline', hint:['Count the jumps from 0 to 1. That is the denominator.','Count the jumps from 0 to the dot.'] }; },
+    ],
+    L3: [
+      () => { const [n, d] = R.pick([[1,2],[1,3],[2,3],[3,4],[1,4],[2,5]]); const k = R.pick([2,3]); return { t:'line', q:'Mark ' + tk(n, d) + ' on this number line. Look at how many jumps it has!', max:1, den:d * k, e:fs(n, d), sk:'numline', hint:['This line has ' + d * k + ' jumps between 0 and 1, not ' + d + '.','Change ' + tk(n, d) + ' into ' + (d * k) + 'ths: ' + tk(n, d) + ' = ' + tk(n * k, d * k) + '.'] }; },
+      () => { const d = R.pick([2,3,4,5]); const max = R.pick([2,3]); const n = R.coprime(d + 1, max * d - 1, d); return { t:'read', q:'Which fraction is marked with the dot? Write it as an improper fraction or a mixed number.', fig:{ k:'nl', max, den:d, at:n }, e:fs(n, d), sk:'numline', hint:['Each whole number is split into ' + d + ' jumps.','Count every jump from 0, past 1, to the dot.'] }; },
+      () => { const [n, d] = R.pick([[1,2],[1,3],[2,5],[3,4],[2,3]]); return { t:'frac', q:'Which fraction is exactly halfway between 0 and ' + tk(n, d) + '?', e: fs(n, d) + ' ÷ 2', sk:'numline', hint:['Halfway means half of the distance.','Half of ' + tk(n, d) + ' is ' + tk(n, d) + ' × {1/2}.'] }; },
+      () => { const [n1, n2, d] = R.pick([[1,2,3],[1,3,4],[2,3,5],[1,2,4],[3,4,5]]); return { t:'open', q:'Write two different fractions that lie between ' + tk(n1, d) + ' and ' + tk(n2, d) + '.', v:'between', p:{ lo:fs(n1, d), hi:fs(n2, d) }, n:2, sk:'numline', hint:['There seems to be no room. Cut the pieces smaller!','Write both as equivalent fractions with a bigger denominator, like ' + tk(n1 * 10, d * 10) + ' and ' + tk(n2 * 10, d * 10) + '.'] }; },
+    ],
+  },
+  // ===================== World 3: proper and improper =====================
+  3: {
+    L2: [
+      () => { const kind = R.int(0, 2); const d = R.int(2, 12); const n = kind === 0 ? R.int(1, d - 1) : kind === 1 ? R.int(d + 1, d * 3) : d;
+        return { t:'mcq', q:'What kind of fraction is ' + tk(n, d) + '?', opts:['Proper (less than 1)','Improper (more than 1)','Equal to 1'], a:kind, sk:'proper', hint:['Compare the top with the bottom.','Do you have fewer pieces than one whole needs, or more?'] }; },
+      () => { const d = R.int(2, 15); const n = R.pick([R.int(1, d - 1), R.int(d + 1, d * 2), d]); const other = R.pick(['1', '1', '2']); return { t:'cmp', L:fs(n, d), R:other, sk:'proper', hint:['How many ' + tk(1, d) + ' pieces make 1 whole?','1 = ' + tk(d, d) + (other === '2' ? ' and 2 = ' + tk(2 * d, d) : '') + '.'] }; },
+    ],
+    L3: [
+      () => { const n = R.int(2, 9), gap = R.int(1, 5); const d = n + gap; return { t:'frac', q:'I am a proper fraction. My numerator and denominator add up to ' + (n + d) + ', and my denominator is ' + gap + ' more than my numerator. Who am I?', e:fs(n, d), form:'exact', sk:'proper', hint:['Try pairs of numbers that add to ' + (n + d) + '.','The bottom number is ' + gap + ' bigger than the top.'] }; },
+      () => { const d = R.int(3, 15); return { t:'num', q:'What is the SMALLEST whole number that can go in the box so that ☐/' + d + ' is an improper fraction?', e:String(d), sk:'proper', why:'A fraction is improper when the numerator is equal to or greater than the denominator. So ' + d + '/' + d + ' (which equals 1) is the smallest improper one.', hint:['Improper means numerator is equal to OR greater than the denominator.'] }; },
+      () => { const d = R.int(4, 15); return { t:'frac', q:'I am the largest proper fraction with denominator ' + d + '. Who am I?', e:fs(d - 1, d), form:'exact', sk:'proper', hint:['Proper means the top is smaller than ' + d + '.','What is the biggest whole number smaller than ' + d + '?'] }; },
+      () => { const d = R.pick([3,4,5,6]); const w = R.int(1, 3); return { t:'open', q:'Write two different improper fractions with denominator ' + d + ' that lie between ' + w + ' and ' + (w + 1) + '.', v:'between', p:{ lo:String(w), hi:String(w + 1), den:d }, n:2, sk:'proper', hint:[w + ' = ' + tk(w * d, d) + ' and ' + (w + 1) + ' = ' + tk((w + 1) * d, d) + '.','Pick numerators in between.'] }; },
+    ],
+  },
+  // ===================== World 4: mixed fractions =====================
+  4: {
+    L2: [
+      () => { const d = R.int(2, 12); const w = R.int(1, 9); const n = R.int(1, d - 1); return { t:'frac', q:'Convert ' + tk(w * d + n, d) + ' into a mixed fraction.', e:fs(w * d + n, d), form:'mixed', sk:'mixed', hint:['Divide ' + (w * d + n) + ' by ' + d + '.','The quotient is the whole number. The remainder goes on top.'] }; },
+      () => { const d = R.int(2, 12); const w = R.int(1, 9); const n = R.coprime(1, d - 1, d); return { t:'frac', q:'Convert ' + tkm(w, n, d) + ' into an improper fraction.', e:mx(w, n, d), form:'improper', sk:'mixed', hint:['How many ' + tk(1, d) + ' pieces are in ' + w + ' wholes?',w + ' wholes = ' + w * d + ' pieces. Add the ' + n + ' extra pieces.'] }; },
+      () => { const d = R.pick([2,3,4,5]); const w = R.int(1, 2); const n = R.int(1, d - 1); return { t:'line', q:'Mark ' + tkm(w, n, d) + ' on the number line.', max:w + 1, den:d, e:mx(w, n, d), sk:'numline', hint:['First find ' + w + ' on the line.','Then make ' + n + ' more small jumps.'] }; },
+    ],
+    L3: [
+      () => { const d = R.int(3, 9); const w = R.int(2, 9); const n = R.int(1, d - 1); const opts = [[w - 1, w], [w, w + 1], [w + 1, w + 2], [n, n + 1]].filter((x, i, a) => a.findIndex(y => y[0] === x[0]) === i);
+        const sh = R.shuffle(opts); return { t:'mcq', q:tk(w * d + n, d) + ' lies between which two whole numbers?', opts:sh.map(o => o[0] + ' and ' + o[1]), a:sh.findIndex(o => o[0] === w), sk:'mixed', hint:['How many whole groups of ' + d + ' fit into ' + (w * d + n) + '?'] }; },
+      () => { const k = R.pick([2,3,4,5,6]); const items = R.int(k + 1, 4 * k); const thing = R.pick(['rotis','pizzas','cakes','chikki bars']); if (items % k === 0) return GEN[4].L3[1]();
+        return { t:'frac', q:items + ' ' + thing + ' are shared equally among ' + k + ' children. How much does each child get?', e:fs(items, k), form:'mixed', sk:'mixed', hint:['Sharing equally means dividing: ' + items + ' ÷ ' + k + '.','Each child first gets whole ' + thing + '. Then the leftovers are cut into ' + k + ' equal parts.'] }; },
+      () => { const d = R.int(3, 9); const w = R.int(2, 7); const n = R.int(1, d - 1); const imp = w * d + n; const who = nm();
+        const variants = [[w, n, true], [w + 1, n, false], [w - 1, n, false], [w, n === d - 1 ? n - 1 : n + 1, false]].filter(v => v[0] >= 1 && v[1] >= 1 && v[1] < d);
+        const [sw, sn, ok] = Math.random() < 0.4 ? variants[0] : R.pick(variants.slice(1));
+        return { t:'yn', q: who + ' says ' + tk(imp, d) + ' = ' + tkm(sw, sn, d) + '. Is ' + who + ' right?', a: ok, sk:'mixed', why: ok ? 'Yes. ' + w + ' × ' + d + ' + ' + n + ' = ' + imp + '.' : 'No. ' + imp + ' ÷ ' + d + ' = ' + w + ' remainder ' + n + ', so it is ' + tkm(w, n, d) + '.', hint:['Check by turning ' + tkm(sw, sn, d) + ' back into an improper fraction.'] }; },
+      () => { const d = R.int(3, 9); const w = R.int(2, 8); const n = R.int(1, d - 1); return { t:'num', q:'In the mixed number ' + w + ' ☐/' + d + ', the improper form has numerator ' + (w * d + n) + '. What number goes in the box?', e:String(n), sk:'mixed', hint:[w + ' wholes make ' + w * d + ' pieces of ' + tk(1, d) + '.','How many more pieces get you to ' + (w * d + n) + '?'] }; },
+      () => { const d = R.int(3, 9); const w = R.int(1, 5); const n = R.int(1, d - 1); const imp = w * d + n + R.pick([-1, 0, 1]); return { t:'cmp', L:mx(w, n, d), R:fs(imp, d), sk:'mixed', hint:['Change the mixed number into an improper fraction first.'] }; },
+    ],
+  },
+  // ===================== World 5: equivalent fractions =====================
+  5: {
+    L2: [
+      () => { const [n, d] = properFrac(2, 9); const k = R.int(2, 9); const hideTop = Math.random() < 0.5;
+        return { t:'num', q:'Fill the box: ' + tk(n, d) + ' = ' + (hideTop ? '☐/' + d * k : n * k + '/☐'), e:String(hideTop ? n * k : d * k), sk:'equiv', hint:['What did ' + (hideTop ? d : n) + ' get multiplied by to become ' + (hideTop ? d * k : n * k) + '?','Do the SAME to the other number.'] }; },
+      () => { const [n, d] = properFrac(2, 9); const k = R.int(2, 8); const byDen = Math.random() < 0.5;
+        return { t:'frac', q:'Find the fraction equal to ' + tk(n, d) + ' with ' + (byDen ? 'denominator ' + d * k : 'numerator ' + n * k) + '.', e:fs(n * k, d * k), form:'exact', sk:'equiv', hint:['Multiply the top and the bottom by the same number.'] }; },
+      () => { const [n, d] = properFrac(2, 9); const k = R.int(2, 6); const same = Math.random() < 0.5; const n2 = same ? n * k : n * k + R.pick([-1, 1]); const d2 = d * k;
+        return { t:'yn', q:'Are ' + tk(n, d) + ' and ' + tk(n2, d2) + ' equivalent?', L:fs(n, d), R:fs(n2, d2), sk:'equiv', hint:['Cross multiply: ' + n + ' × ' + d2 + ' and ' + n2 + ' × ' + d + '.','If the two products are equal, the fractions are equal.'] }; },
+    ],
+    L3: [
+      () => { const [n, d] = properFrac(2, 7); const good = [2,3,4].map(k => [n * k, d * k]); const bad = [n + 2, d + 2]; const opts = R.shuffle([...good.slice(0, 3), bad]);
+        return { t:'mcq', q:'Which one is NOT equal to ' + tk(n, d) + '?', opts:opts.map(o => tk(o[0], o[1])), a:opts.indexOf(bad), sk:'equiv', why:'Adding the same number to top and bottom changes the value. Only multiplying or dividing both by the same number keeps it equal.', hint:['Check each one: was it made by MULTIPLYING top and bottom by the same number?'] }; },
+      () => { const [n, d] = R.pick([[1,3],[1,4],[2,5],[1,2],[3,4]]); const a = R.int(1, 3); const who = nm();
+        return { t:'yn', q: who + ' added ' + a + ' to the top and bottom of ' + tk(n, d) + ' and got ' + tk(n + a, d + a) + '. ' + who + ' says they are equivalent. Right?', a:false, sk:'equiv', why:tk(n, d) + ' and ' + tk(n + a, d + a) + ' are not equal. Picture it: adding the same number of pieces to the top and bottom changes the size of the share.', hint:['Cross multiply to check.','Or draw both. Do they cover the same amount?'] }; },
+      () => { const [n, d] = properFrac(2, 6); const lo = R.int(15, 30); const hi = lo + R.int(8, 14); let ok = false; for (let x = lo; x <= hi; x++) if (x % d === 0) ok = true; if (!ok) return GEN[5].L3[2]();
+        return { t:'open', q:'Write a fraction equal to ' + tk(n, d) + ' whose denominator is between ' + lo + ' and ' + hi + '.', v:'equivWithDen', p:{ f:fs(n, d), lo, hi }, n:1, sk:'equiv', hint:['Which multiples of ' + d + ' are between ' + lo + ' and ' + hi + '?'] }; },
+      () => { const [n, d] = properFrac(2, 6); const k1 = R.int(2, 4), k2 = R.int(5, 9); return { t:'num', q:'Fill the box: ' + tk(n, d) + ' = ' + tk(n * k1, d * k1) + ' = ' + n * k2 + '/☐', e:String(d * k2), sk:'equiv', hint:['Use the first fraction, it is easiest.','' + n + ' was multiplied by ' + k2 + ' to get ' + n * k2 + '.'] }; },
+    ],
+  },
+  // ===================== World 6: simplest form =====================
+  6: {
+    L2: [
+      () => { const [n, d] = properFrac(2, 13); const k = R.pick([2,3,4,5,6,7,8,9,10,12]); return { t:'frac', q:'Reduce ' + tk(n * k, d * k) + ' to its lowest form.', e:fs(n * k, d * k), form:'lowest', sk:'simplest', hint:['Find a number that divides BOTH ' + n * k + ' and ' + d * k + '.','The biggest such number (the HCF) is ' + k + '.'] }; },
+      () => { const simple = Math.random() < 0.5; const [n, d] = properFrac(3, 15); const k = simple ? 1 : R.pick([2,3,5]); return { t:'yn', q:'Is ' + tk(n * k, d * k) + ' in its simplest form?', a:simple, sk:'simplest', why: simple ? n + ' and ' + d + ' have no common factor except 1.' : 'Both can be divided by ' + k + '. It simplifies to ' + tk(n, d) + '.', hint:['Is there any number other than 1 that divides both?'] }; },
+    ],
+    L3: [
+      () => { const [n, d] = properFrac(2, 9); const k = R.pick([6,8,9,12,14,15,18]); return { t:'num', q:'To simplify ' + tk(n * k, d * k) + ' in ONE step, what number should you divide the top and bottom by?', e:String(k), sk:'simplest', why:'The HCF of ' + n * k + ' and ' + d * k + ' is ' + k + '. Dividing by the HCF gives the simplest form in one step.', hint:['You need the HIGHEST common factor, not just any common factor.'] }; },
+      () => { const [n, d] = properFrac(2, 7); const k = R.pick([4,6,8,9]); const p = R.pick([2,3].filter(x => k % x === 0)); const who = nm();
+        return { t:'yn', q: who + ' says the simplest form of ' + tk(n * k, d * k) + ' is ' + tk(n * k / p, d * k / p) + '. Right?', a:false, sk:'simplest', why:tk(n * k / p, d * k / p) + ' can still be divided by ' + (k / p) + '. The simplest form is ' + tk(n, d) + '.', hint:['Can the new fraction be divided again?'] }; },
+      () => { const [n, d] = properFrac(2, 7); const a = R.int(2, 5), b = R.int(6, 9); const c = R.int(2, 9), e = R.int(2, 9);
+        const opts = R.shuffle([[n * b, d * b, 1], [n * c + 1, d * c, 0], [n * e, d * e + 1, 0]]);
+        if (opts.some(o => !o[2] && F(fs(o[0], o[1])).eq(F(fs(n, d))))) return GEN[6].L3[2]();
+        return { t:'mcq', q:'Which of these is equal to ' + tk(n * a, d * a) + '?', opts:opts.map(o => tk(o[0], o[1])), a:opts.findIndex(o => o[2] === 1), sk:'simplest', why:'Both simplify to ' + tk(n, d) + '.', hint:['Simplify ' + tk(n * a, d * a) + ' first.','Then simplify each option and compare.'] }; },
+      () => { const [n, d] = properFrac(2, 6); const A = d * R.int(3, 6), B = d * R.int(7, 10); const same = Math.random() < 0.5; const bA = n * (A / d), bB = same ? n * (B / d) : n * (B / d) + 1; const who1 = R.pick(NAMES), who2 = R.pick(NAMES.filter(x => x !== who1));
+        return { t:'yn', q: who1 + ' read ' + bA + ' pages of a ' + A + ' page book. ' + who2 + ' read ' + bB + ' pages of a ' + B + ' page book. Did they read the same fraction of their books?', a:same, sk:'simplest', why:tk(bA, A) + ' = ' + F(fs(bA, A)).tok() + ' and ' + tk(bB, B) + ' = ' + F(fs(bB, B)).tok() + '.', hint:['Write each as a fraction and simplify.'] }; },
+    ],
+  },
+  // ===================== World 7: comparing and ordering =====================
+  7: {
+    L2: [
+      () => { let a, b; do { a = properFrac(2, 12); b = properFrac(2, 12); } while (a[1] === b[1]); return { t:'cmp', L:fs(a[0], a[1]), R:fs(b[0], b[1]), sk:'compare', hint:['Different denominators. Make them the same, or cross multiply.','Cross multiply: ' + a[0] + ' × ' + b[1] + ' and ' + b[0] + ' × ' + a[1] + '.'] }; },
+      () => { const set = new Map(); while (set.size < 4) { const [n, d] = properFrac(2, 10); set.set(F(fs(n, d)).key(), fs(n, d)); } return { t:'order', items:[...set.values()], dir:R.pick(['asc','desc']), sk:'order', hint:['Find the LCM of all the denominators and rewrite each fraction with it.','Then just compare the numerators.'] }; },
+    ],
+    L3: [
+      () => { const n = R.int(2, 7); let d1 = R.int(n + 1, n + 9), d2; do { d2 = R.int(n + 1, n + 9); } while (d2 === d1); return { t:'cmp', L:fs(n, d1), R:fs(n, d2), sk:'compare', hint:['Same numerator! Which pieces are bigger: ' + d1 + 'ths or ' + d2 + 'ths?','Cutting a cake into MORE pieces makes each piece SMALLER.'] }; },
+      () => { const d = R.pick([5,7,9,11,13,15]); const n = R.int(1, d - 1); return { t:'cmp', L:fs(n, d), R:'1/2', sk:'compare', hint:['Half of ' + d + ' is ' + d / 2 + '.','Is ' + n + ' more or less than half of ' + d + '?'] }; },
+      () => { const d = R.int(5, 12); const pair = [[d - 1, d], [d, d + 1]]; return { t:'mcq', q:'Which is closer to 1: ' + tk(d - 1, d) + ' or ' + tk(d, d + 1) + '?', opts:[tk(d - 1, d), tk(d, d + 1), 'They are equally close'], a:1, sk:'compare', why:tk(d - 1, d) + ' is ' + tk(1, d) + ' away from 1. ' + tk(d, d + 1) + ' is ' + tk(1, d + 1) + ' away. ' + tk(1, d + 1) + ' is the smaller gap.', hint:['How far is each one from 1?','Compare the gaps: ' + tk(1, d) + ' and ' + tk(1, d + 1) + '.'] }; },
+      () => { let a, b; do { a = properFrac(3, 9); b = properFrac(3, 9); } while (F(fs(a[0], a[1])).eq(F(fs(b[0], b[1])))); const n1 = nm(), n2 = R.pick(NAMES.filter(x => x !== n1)); const big = F(fs(a[0], a[1])).cmp(F(fs(b[0], b[1]))) > 0;
+        return { t:'mcq', q: n1 + ' practised piano for ' + tk(a[0], a[1]) + ' of an hour and ' + n2 + ' for ' + tk(b[0], b[1]) + ' of an hour. Who practised longer?', opts:[n1, n2], a: big ? 0 : 1, sk:'compare', hint:['Compare ' + tk(a[0], a[1]) + ' and ' + tk(b[0], b[1]) + '.','Or turn both into minutes: ' + tk(1, a[1]) + ' hour is ' + (60 / a[1]) + ' minutes.'] }; },
+      () => { const [n1, n2, d] = R.pick([[1,2,3],[2,3,4],[3,4,5],[1,2,5],[4,5,7]]); return { t:'open', q:'Write a fraction that lies between ' + tk(n1, d) + ' and ' + tk(n2, d) + '.', v:'between', p:{ lo:fs(n1, d), hi:fs(n2, d) }, n:1, sk:'compare', hint:['Make the pieces smaller: multiply top and bottom of both by 2 or 10.'] }; },
+    ],
+  },
+  // ===================== World 8: addition and subtraction =====================
+  8: {
+    L2: [
+      () => { const d = R.int(3, 15); const a = R.int(1, d - 1), b = R.int(1, d - 1); const op = R.pick(['+', '-']); const [x, y] = op === '-' && a < b ? [b, a] : [a, b]; if (op === '-' && x === y) return GEN[8].L2[0]();
+        return { t:'frac', e: fs(x, d) + ' ' + op + ' ' + fs(y, d), sk:'addlike' }; },
+      () => { const pairs = [[2,3],[3,4],[2,5],[4,6],[3,5],[6,8],[4,10],[5,6],[3,8],[6,9],[4,12],[5,15],[8,12]]; const [d1, d2] = R.pick(pairs); const a = R.coprime(1, d1 - 1, d1), b = R.coprime(1, d2 - 1, d2); const op = R.pick(['+', '+', '-']);
+        let L = fs(a, d1), Rr = fs(b, d2); if (op === '-' && F(L).cmp(F(Rr)) < 0) [L, Rr] = [Rr, L]; if (op === '-' && F(L).eq(F(Rr))) return GEN[8].L2[1]();
+        return { t:'frac', e: L + ' ' + op + ' ' + Rr, sk: op === '+' ? 'addunlike' : 'sub' }; },
+      () => { const d1 = R.pick([2,3,4,5,6]), d2 = R.pick([2,3,4,6,8]); const w1 = R.int(2, 8), w2 = R.int(1, w1 - 1); const a = R.int(1, d1 - 1), b = R.int(1, d2 - 1); const op = R.pick(['+', '-']);
+        return { t:'frac', e: mx(w1, a, d1) + ' ' + op + ' ' + mx(w2, b, d2), sk: op === '+' ? 'addunlike' : 'sub' }; },
+    ],
+    L3: [
+      () => { const [a, d1] = properFrac(2, 8); const [b, d2] = properFrac(2, 8); const target = F(fs(a, d1)).add(F(fs(b, d2)));
+        return { t:'frac', q:'What must be added to ' + tk(a, d1) + ' to get ' + target.tok() + '?', e: target.tokImp().replace(/[{}]/g, '') + ' - ' + fs(a, d1), sk:'sub', hint:['If ' + tk(a, d1) + ' + ☐ = ' + target.tok() + ', then ☐ = ' + target.tok() + ' − ' + tk(a, d1) + '.'] }; },
+      () => { let [a, d1] = properFrac(2, 9), [b, d2] = properFrac(2, 9); if (F(fs(a, d1)).cmp(F(fs(b, d2))) > 0) [a, d1, b, d2] = [b, d2, a, d1]; if (F(fs(a, d1)).eq(F(fs(b, d2)))) return GEN[8].L3[1]();
+        return { t:'frac', q:'Subtract ' + tk(a, d1) + ' from ' + tk(b, d2) + '.', e: fs(b, d2) + ' - ' + fs(a, d1), sk:'sub', traps:[{ v: F(fs(a, d1)).sub(F(fs(b, d2))).tokImp().replace(/[{}]/g, ''), msg:'"Subtract A from B" means B − A. You did it the other way round.' }], hint:['"Subtract 2 from 5" means 5 − 2. Which number comes first here?'] }; },
+      () => { const [d1, d2] = R.pick([[3,4],[2,5],[3,5],[4,5],[2,3]]); const a = 1, b = 1; const who = nm();
+        return { t:'yn', q: who + ' says ' + tk(a, d1) + ' + ' + tk(b, d2) + ' = ' + tk(a + b, d1 + d2) + '. Right?', a:false, sk:'addunlike', why:'No. ' + tk(a + b, d1 + d2) + ' is even smaller than ' + tk(a, d1) + ' alone, which cannot happen when you add. The right answer is ' + F(fs(a, d1)).add(F(fs(b, d2))).tok() + '.', hint:['Adding should make the answer BIGGER. Is ' + tk(a + b, d1 + d2) + ' bigger than ' + tk(a, d1) + '?'] }; },
+      () => { const [a, d1] = properFrac(2, 9), [b, d2] = properFrac(2, 9); const s = F(fs(a, d1)).add(F(fs(b, d2))); const c = s.cmp(1);
+        return { t:'mcq', q:'WITHOUT working it out fully: is ' + tk(a, d1) + ' + ' + tk(b, d2) + ' more than 1, less than 1 or exactly 1?', opts:['Less than 1','Exactly 1','More than 1'], a:c + 1, sk:'addunlike', why:'The sum is ' + s.tok() + '.', hint:['Is each fraction more or less than {1/2}?','Two numbers both above {1/2} add to more than 1.'] }; },
+      () => { const d = R.pick([6,8,10,12]); const parts = R.sample(d - 1, 3).map(x => x + 1); const tot = parts.reduce((a, b) => a + b, 0); if (tot >= d) return GEN[8].L3[4](); const names = R.shuffle(NAMES).slice(0, 3);
+        return { t:'frac', q:'A pizza is shared. ' + names[0] + ' eats ' + tk(parts[0], d) + ', ' + names[1] + ' eats ' + tk(parts[1], d) + ' and ' + names[2] + ' eats ' + tk(parts[2], d) + '. What fraction of the pizza is left?', e:'1 - (' + parts.map(p => fs(p, d)).join(' + ') + ')', sk:'word', hint:['The whole pizza is 1 = ' + tk(d, d) + '.','Add up what was eaten, then take it away from the whole.'] }; },
+      () => { const T = R.pick(['1', '1', '2', '1_1/2']); return { t:'open', q:'Write two pairs of fractions with DIFFERENT denominators that add up to ' + F(T).tok() + '.', v:'pairsum', p:{ s:T, diffDen:true }, n:2, sk:'addunlike', hint:['Start with an easy one, like {1/2} + ... ','Pick one fraction, then work out what is missing.'] }; },
+    ],
+  },
+  // ===================== World 9: multiplication =====================
+  9: {
+    L2: [
+      () => { const [n, d] = properFrac(2, 9); const k = d * R.int(2, 9); return { t:'frac', e: Math.random() < 0.5 ? fs(n, d) + ' x ' + k : k + ' x ' + fs(n, d), sk:'mulwhole', hint:['Multiply the whole number by the numerator. The denominator stays.','Cancel common factors first to keep numbers small.'] }; },
+      () => { const [a, b] = properFrac(2, 10), [c, d] = properFrac(2, 10); return { t:'frac', e: fs(a, b) + ' x ' + fs(c, d), sk:'mulfrac', hint:['Multiply top × top and bottom × bottom.','Cancel common factors across the fractions first.'] }; },
+      () => { const w1 = R.int(1, 4), w2 = R.int(1, 3); const [a, b] = properFrac(2, 6), [c, d] = properFrac(2, 6); return { t:'frac', e: mx(w1, a, b) + ' x ' + mx(w2, c, d), sk:'mulfrac' }; },
+      () => { const c = R.pick([['an hour','minutes',60],['a day','hours',24],['a year','months',12],['a kilogram','grams',1000],['a metre','centimetres',100],['a rupee','paise',100],['a minute','seconds',60]]); const ds = [2,3,4,5,6,8,10,12].filter(x => c[2] % x === 0); const d = R.pick(ds); const n = R.coprime(1, d - 1, d);
+        return { t:'num', q:'How many ' + c[1] + ' is ' + tk(n, d) + ' of ' + c[0] + '?', e: fs(n, d) + ' of ' + c[2], unit:c[1], sk:'mulwhole', hint:[c[0].replace(/^an? /, 'One ') + ' has ' + c[2] + ' ' + c[1] + '.','Find ' + tk(1, d) + ' of ' + c[2] + ' first.'] }; },
+    ],
+    L3: [
+      () => { const N = R.int(6, 40); const kind = R.int(0, 2); const f = kind === 0 ? fs(...properFrac(2, 9)) : kind === 1 ? fs(R.int(5, 15), R.int(2, 4)) : '1'; const v = F(f); const c = v.cmp(1);
+        return { t:'mcq', q:'Without calculating: is ' + N + ' × ' + v.tokImp() + ' more than ' + N + ', less than ' + N + ' or equal to ' + N + '?', opts:['Less than ' + N, 'Equal to ' + N, 'More than ' + N], a:c + 1, sk:'mulfrac', why:'Multiplying by a number less than 1 takes only PART of ' + N + ', so it gets smaller. Multiplying by more than 1 makes it bigger.', hint:['Is ' + v.tokImp() + ' less than 1 or more than 1?','Taking ' + tk(1, 2) + ' of something gives LESS.'] }; },
+      () => { const [n, d] = properFrac(2, 8); const unit = R.int(2, 12); return { t:'num', q:tk(n, d) + ' of a number is ' + n * unit + '. What is the number?', e: n * unit + ' ÷ ' + fs(n, d), sk:'mulfrac', hint:[tk(n, d) + ' means ' + n + ' parts out of ' + d + '. If ' + n + ' parts are ' + n * unit + ', what is 1 part?','The whole number is ' + d + ' parts.'] }; },
+      () => { const a = R.pick([2,3,4]), b = R.pick([2,3,5]); const N = a * b * R.int(2, 6); return { t:'num', q:'What is ' + tk(1, a) + ' of ' + tk(1, b) + ' of ' + N + '?', e: fs(1, a) + ' of ' + fs(1, b) + ' of ' + N, sk:'mulfrac', hint:['Work from the right. First find ' + tk(1, b) + ' of ' + N + '.'] }; },
+      () => { const w = R.int(2, 4); const [n, d] = [1, 2]; const who = nm(); const wrong = w * w + '_' + n * n + '/' + d * d; const right = F(mx(w, n, d)).mul(F(mx(w, n, d)));
+        return { t:'yn', q: who + ' says ' + tkm(w, n, d) + ' × ' + tkm(w, n, d) + ' = ' + tkm(w * w, 1, 4) + ' because ' + w + ' × ' + w + ' = ' + w * w + ' and ' + tk(1, 2) + ' × ' + tk(1, 2) + ' = ' + tk(1, 4) + '. Right?', a:false, sk:'mulfrac', why:'No. Multiplying the parts separately misses the cross parts. Change to improper fractions: ' + tk(2 * w + 1, 2) + ' × ' + tk(2 * w + 1, 2) + ' = ' + right.tok() + '.', hint:['Try it with a picture: a square ' + tkm(w, 1, 2) + ' on each side. Is its area only ' + w * w + ' and a quarter?'] }; },
+      () => { const L = R.int(2, 9), W = R.int(1, 6); const a = R.pick([1, 2]), b = R.pick([1, 3]); const da = 2, db = R.pick([3, 4]); return { t:'frac', q:'A garden bed is ' + tkm(L, a, da) + ' m long and ' + tkm(W, b % db || 1, db) + ' m wide. Find its area.', e: mx(L, a, da) + ' x ' + mx(W, b % db || 1, db), unit:'m²', sk:'word', hint:['Area of a rectangle = length × breadth.','Change both mixed numbers into improper fractions first.'] }; },
+    ],
+  },
+  // ===================== World 10: division =====================
+  10: {
+    L2: [
+      () => { const [n, d] = properFrac(2, 9); const k = n * R.int(2, 9); return { t:'frac', e: k + ' ÷ ' + fs(n, d), sk:'div', hint:['Dividing by ' + tk(n, d) + ' is the same as multiplying by ' + tk(d, n) + '.'] }; },
+      () => { const [n, d] = properFrac(2, 9); const k = R.int(2, 9); return { t:'frac', e: fs(n, d) + ' ÷ ' + k, sk:'div', hint:[k + ' is the same as ' + tk(k, 1) + '. Its reciprocal is ' + tk(1, k) + '.'] }; },
+      () => { const [a, b] = properFrac(2, 9), [c, d] = properFrac(2, 9); return { t:'frac', e: fs(a, b) + ' ÷ ' + fs(c, d), sk:'div', hint:['Keep the first fraction. Flip the second. Multiply.'] }; },
+      () => { const w = R.int(1, 5); const [n, d] = properFrac(2, 7); return { t:'frac', q:'What is the reciprocal of ' + tkm(w, n, d) + '?', e: fs(1, 1) + ' ÷ ' + mx(w, n, d), sk:'div', hint:['Change it to an improper fraction first.','Then flip it upside down.'] }; },
+    ],
+    L3: [
+      () => { const [n, d] = R.pick([[3,4],[1,2],[2,3],[1,4],[3,5],[5,6]]); const L = n * R.int(2, 8); return { t:'num', q:'A ' + L + ' m rope is cut into pieces ' + tk(n, d) + ' m long. How many pieces?', e: L + ' ÷ ' + fs(n, d), unit:'pieces', sk:'div', hint:['How many ' + tk(n, d) + ' m pieces fit into 1 m?','Then how many fit into ' + L + ' m?'] }; },
+      () => { const N = R.int(4, 20); const kind = R.int(0, 1); const [n, d] = properFrac(2, 6); const f = kind === 0 ? fs(n, d) : fs(d + n, d);
+        const c = F(f).cmp(1); return { t:'mcq', q:'Without calculating: is ' + N + ' ÷ ' + F(f).tokImp() + ' more than ' + N + ' or less than ' + N + '?', opts:['Less than ' + N, 'More than ' + N], a: c < 0 ? 1 : 0, sk:'div', why: c < 0 ? 'Dividing by a number less than 1 asks how many small pieces fit, so you get MORE pieces than ' + N + '.' : 'Dividing by a number more than 1 gives fewer than ' + N + ' groups.', hint:['How many halves are there in 1? More than 1 or less?'] }; },
+      () => { const [a, b] = properFrac(2, 7), [c, d] = properFrac(2, 7); const who = nm(); const wrong = F(fs(b, a)).mul(F(fs(c, d)));
+        return { t:'yn', q: who + ' worked out ' + tk(a, b) + ' ÷ ' + tk(c, d) + ' as ' + tk(b, a) + ' × ' + tk(c, d) + '. Right?', a:false, sk:'div', why:'No. Keep the FIRST fraction and flip the one you divide BY: ' + tk(a, b) + ' × ' + tk(d, c) + ' = ' + F(fs(a, b)).div(F(fs(c, d))).tok() + '.', hint:['Which fraction should be flipped: the one being divided, or the one you divide by?'] }; },
+      () => { const [a, b] = properFrac(2, 8); const P = F(fs(a, b)).mul(F(fs(R.int(2, 9), R.pick([1, 2, 3])))); return { t:'frac', q:'The product of two numbers is ' + P.tok() + '. One of them is ' + tk(a, b) + '. Find the other.', e: P.tokImp().replace(/[{}]/g, '') + ' ÷ ' + fs(a, b), sk:'div', hint:['If A × B = P, then B = P ÷ A.'] }; },
+      () => { const [a, b] = properFrac(2, 8), [c, d] = properFrac(2, 8); return { t:'frac', q:'By what number should ' + tk(a, b) + ' be multiplied to get ' + tk(c, d) + '?', e: fs(c, d) + ' ÷ ' + fs(a, b), sk:'div', hint:[tk(a, b) + ' × ☐ = ' + tk(c, d) + ', so ☐ = ' + tk(c, d) + ' ÷ ' + tk(a, b) + '.'] }; },
+    ],
+  },
+  // ===================== World 11: BODMAS =====================
+  11: {
+    L2: [
+      () => { const [a, b] = properFrac(2, 6), [c, d] = properFrac(2, 6), [e, f] = properFrac(2, 6); const forms = [
+          fs(a, b) + ' of ' + fs(c, d) + ' + ' + fs(e, f),
+          '(' + fs(a, b) + ' + ' + fs(c, d) + ') x ' + fs(e, f),
+          fs(a, b) + ' + ' + fs(c, d) + ' ÷ ' + fs(e, f),
+          R.int(2, 4) + ' - ' + fs(c, d) + ' x ' + fs(e, f),
+          fs(a, b) + ' ÷ ' + fs(c, d) + ' of ' + fs(e, f) ];
+        return { t:'frac', q:'Simplify:', e: R.pick(forms), sk:'bodmas', hint:['BODMAS: Brackets, then Of, then Division and Multiplication, then Addition and Subtraction.'] }; },
+    ],
+    L3: [
+      () => { const opts = [['{1/2} + {1/3} × {3/4}','×'],['({1/2} + {1/3}) × {3/4}','+'],['{2/3} ÷ {1/2} of {4/5}','of'],['{3/4} − {1/4} ÷ {1/2}','÷']]; const [ex, ans] = R.pick(opts); const choices = ['+','−','×','÷','of'];
+        return { t:'mcq', q:'In ' + ex + ', which operation do you do FIRST?', opts:choices, a:choices.indexOf(ans), sk:'bodmas', hint:['B, O, D/M, A/S. Look for brackets first, then "of".'] }; },
+      () => { const [a, b] = R.pick([[1,3],[1,4],[2,5],[1,2]]); const [c, d] = R.pick([[1,4],[1,3],[1,2],[2,3]]); const M = b * d * R.int(2, 12) * 10; const who = nm();
+        return { t:'num', q: who + ' had ₹' + M + '. ' + who + ' spent ' + tk(a, b) + ' of it on books, and then ' + tk(c, d) + ' of the REMAINING money on snacks. How much money is left?', e: '(' + M + ' - ' + fs(a, b) + ' of ' + M + ') - ' + fs(c, d) + ' of (' + M + ' - ' + fs(a, b) + ' of ' + M + ')', unit:'₹', sk:'word', hint:['Step 1: how much is left after books?','Step 2: the snacks fraction is of THAT remaining amount, not of ₹' + M + '.'] }; },
+      () => { const who = nm(); const k = R.pick([2,4,6]); return { t:'yn', q: who + ' says {1/2} + {1/2} × ' + k + ' = ' + k + ', because {1/2} + {1/2} = 1 and 1 × ' + k + ' = ' + k + '. Right?', a:false, sk:'bodmas', why:'Multiplication comes before addition. {1/2} × ' + k + ' = ' + k / 2 + ', then {1/2} + ' + k / 2 + ' = ' + F('1/2').add(k / 2).tok() + '.', hint:['Which comes first in BODMAS: addition or multiplication?'] }; },
+      () => { const [a, b] = properFrac(2, 5), [c, d] = properFrac(2, 5); const w = R.int(2, 4); return { t:'frac', q:'Simplify:', e: w + ' - {' + fs(a, b) + ' + (' + fs(c, d) + ' x ' + fs(1, 2) + ')}', sk:'bodmas', hint:['Start with the innermost bracket ( ).','Then the { } bracket. Then the subtraction.'] }; },
+    ],
+  },
+};
+// Boss island draws twists from every world
+GEN[12] = { L2: [], L3: [] };
+for (let w = 1; w <= 11; w++) { GEN[12].L2.push(...GEN[w].L2); GEN[12].L3.push(...GEN[w].L3); }
+
+// open validator extension: 'between' with fixed denominator, 'pairsum' with different denominators
+const _between = VALIDATORS.between;
+VALIDATORS.between = (p, list) => { const m = _between(p, list); if (m) return m; if (p.den) for (const f of list) if (f.rd !== p.den) return 'Use denominator ' + p.den + '.'; return null; };
+const _pairsum = VALIDATORS.pairsum;
+VALIDATORS.pairsum = (p, pairs) => { const m = _pairsum(p, pairs); if (m) return m; if (p.diffDen) for (const [a, b] of pairs) if (a.rd === b.rd) return 'Each pair needs two DIFFERENT denominators. That is the challenge!'; return null; };
+
+function makeQuestion(world, level){
+  const pool = GEN[world]['L' + level];
+  for (let tries = 0; tries < 20; tries++) {
+    try { const q = R.pick(pool)(); q.id = 'g' + world + '-' + level + '-' + Math.random().toString(36).slice(2, 8); q.gen = true; prepare(q); if (!q._broken) return q; } catch (e) { /* retry */ }
+  }
+  throw new Error('generator failed for world ' + world);
+}
+
+
+// ---- ui.js
+// ====================== Fraction Quest app ======================
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const FR_RE = /\{(-?\d+) (\d+)\/(\d+)\}|\{(-?\d+)\/(\d+)\}/g;
+function rich(s){
+  return String(s == null ? '' : s).replace(FR_RE, (m, w, n, d, n2, d2) => {
+    if (w !== undefined) return '<span class="mx">' + w + '<span class="fr"><span class="num">' + n + '</span><span class="den">' + d + '</span></span></span>';
+    return '<span class="fr"><span class="num">' + n2 + '</span><span class="den">' + d2 + '</span></span>';
+  });
+}
+const plain = s => String(s || '').replace(FR_RE, (m, w, n, d, n2, d2) => w !== undefined ? w + ' ' + n + '/' + d : n2 + '/' + d2).replace(/<br>/g, ' ').replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
+const untok = s => String(s).replace(/[{}]/g, '');
+const srcTok = s => s.includes('_') ? '{' + s.replace('_', ' ') + '}' : s.includes('/') ? '{' + s + '}' : s;
+const pad = n => String(n).padStart(2, '0');
+const dayKey = (t = Date.now()) => { const d = new Date(t); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+const fmtTime = t => { const d = new Date(t); return pad(d.getHours()) + ':' + pad(d.getMinutes()); };
+const mins = ms => Math.round(ms / 60000);
+
+// ---------------- State ----------------
+// Where the game runs: 'file' (opened locally), 'artifact' (inside Claude), 'web' (family server on Vercel), 'demo' (web, browser only)
+const MODE = { kind:'file', health:null };
+const lsGet = k => { try { return localStorage.getItem(k); } catch (_) { return null; } };
+const lsSet = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (_) {} };
+const ssGet = k => { try { return sessionStorage.getItem(k); } catch (_) { return null; } };
+const ssSet = (k, v) => { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (_) {} };
+let LS_KEY = 'fractionQuest.v1';
+async function detectMode(){
+  if (window.claude && window.claude.use) { MODE.kind = 'artifact'; return; }
+  if (!/^https?:$/.test(location.protocol)) return;
+  try { const r = await fetch('/api/health', { cache:'no-store' }); if (r.ok) { const j = await r.json(); if (j && j.ok) { MODE.health = j; MODE.kind = 'web'; } } } catch (_) {}
+  if (MODE.kind === 'web' && (ssGet('fq.demo') === '1' || location.hash === '#demo')) MODE.kind = 'demo';
+  if (MODE.kind === 'demo') LS_KEY = 'fractionQuest.demo';
+}
+const familyCode = () => lsGet('fq.familyCode') || '';
+function remoteDb(){
+  const call = async (method, url, body, keepalive) => {
+    const opts = { method, headers:{ 'Content-Type':'application/json', 'X-Family-Code':familyCode() }, cache:'no-store' };
+    if (body !== undefined) { opts.body = JSON.stringify(body); if (keepalive && opts.body.length < 60000) opts.keepalive = true; }
+    const r = await fetch(url, opts);
+    if (r.status === 401) throw { code:'unauthorized', message:'Wrong family code' };
+    if (r.status === 429) throw { code:'resource_exhausted', message:'Too many wrong codes' };
+    if (!r.ok) throw { code:'unavailable', message:'Server ' + r.status };
+    return r.json();
+  };
+  const doc = path => ({
+    get: async () => { const j = await call('GET', '/api/doc?path=' + encodeURIComponent(path)); return { exists:!!j.exists, data:() => j.data }; },
+    set: async data => { await call('PUT', '/api/doc?path=' + encodeURIComponent(path), data, document.visibilityState === 'hidden'); },
+  });
+  const collection = () => { let lim = 30; const q = { orderBy(){ return q; }, limit(n){ lim = n; return q; }, get: async () => { const j = await call('GET', '/api/logs?limit=' + lim); return { docs:j.logs.map(d => ({ data:() => d })) }; } }; return q; };
+  return { doc, collection, call };
+}
+const DEFAULT_STATE = () => ({ v:1, updatedAt:0, player:{ name:'', color:'coral' }, xp:0, badges:{}, worlds:{}, skills:{}, streakBest:0,
+  settings:{ pin:'', goalMin:45, unlockAll:false, sound:true, tgToken:'', tgChat:'', tgLastDaily:'' }, days:{}, simpl:0 });
+let S = DEFAULT_STATE();
+let PLAYER = S.player;
+function loadLocal(){ try { const raw = localStorage.getItem(LS_KEY); if (raw) S = Object.assign(DEFAULT_STATE(), JSON.parse(raw)); } catch (_) {} S.settings = Object.assign(DEFAULT_STATE().settings, S.settings); PLAYER = S.player; }
+let DIRTY = false, LOG_DIRTY = false;
+function saveLocal(push){ if (push) { DIRTY = true; S.updatedAt = Date.now(); } try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (_) {} if (DIRTY) scheduleProgressSync(); }
+function W(w){ return S.worlds[w] = S.worlds[w] || { L1:{ best:0, rounds:0, seen:{} }, L2:{ best:0, rounds:0 }, L3:{ best:0, rounds:0 } }; }
+function today(){ const k = dayKey(); return S.days[k] = S.days[k] || { date:k, ms:0, att:0, cor:0, first:0, hints:0, xp:0, rounds:0, worlds:{}, skills:{}, sessions:[], attempts:[] }; }
+
+// ---------------- Cloud sync (artifact db) ----------------
+let DB = null, dbWriting = Promise.resolve(), progressTimer = null, logTimer = null;
+const SYNC = { mode:'local', last:0, err:'' };
+async function initDb(){
+  try {
+    if (MODE.kind === 'web') DB = remoteDb();
+    else if (MODE.kind === 'artifact') DB = await window.claude.use('db');
+    if (!DB) return;
+    SYNC.mode = 'cloud';
+    const snap = await DB.doc('progress/main').get();
+    if (snap.exists) {
+      const remote = snap.data();
+      if ((remote.updatedAt || 0) > (S.updatedAt || 0)) {
+        const keepDays = S.days; S = Object.assign(DEFAULT_STATE(), JSON.parse(JSON.stringify(remote)));
+        S.settings = Object.assign(DEFAULT_STATE().settings, remote.settings || {}, { tgToken: (JSON.parse(localStorage.getItem(LS_KEY) || '{}').settings || {}).tgToken || '' });
+        S.days = keepDays || {}; PLAYER = S.player;
+        try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (_) {}
+        route();
+      } else if (S.updatedAt) { DIRTY = true; scheduleProgressSync(true); }
+    } else if (S.player.name) { DIRTY = true; scheduleProgressSync(true); }
+    // pull today's remote log so counts continue across devices
+    const ts = await DB.doc('log/' + dayKey()).get();
+    if (ts.exists) { const r = ts.data(); const t = today(); if ((r.att || 0) > t.att) { S.days[dayKey()] = Object.assign(t, JSON.parse(JSON.stringify(r))); } }
+    if (VIEW.name === 'home') route();
+  } catch (e) { SYNC.err = (e && e.code) || String(e); if (MODE.kind !== 'web') { DB = null; SYNC.mode = 'local'; } }
+}
+function queueWrite(fn){ dbWriting = dbWriting.then(fn).then(() => { SYNC.last = Date.now(); SYNC.err = ''; }).catch(e => { SYNC.err = (e && e.code) || String(e); }); return dbWriting; }
+function progressDoc(){ const c = JSON.parse(JSON.stringify(S)); delete c.days; if (c.settings) c.settings.tgToken = ''; return c; }
+function scheduleProgressSync(now){ if (!DB || !DIRTY) return; clearTimeout(progressTimer); progressTimer = setTimeout(() => queueWrite(() => DB.doc('progress/main').set(progressDoc())), now ? 0 : 4000); }
+function scheduleLogSync(now){ if (!DB || !LOG_DIRTY) return; clearTimeout(logTimer); const k = dayKey(); logTimer = setTimeout(() => { const d = S.days[k]; if (d) queueWrite(() => DB.doc('log/' + k).set(JSON.parse(JSON.stringify(d)))); }, now ? 0 : 3000); }
+
+// ---------------- Active time tracking ----------------
+let lastInput = Date.now(), lastTick = Date.now(), sessionIdx = -1;
+['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(ev => addEventListener(ev, () => { lastInput = Date.now(); }, { passive:true }));
+function tickTime(){
+  const now = Date.now(); const dt = now - lastTick; lastTick = now;
+  if (document.visibilityState === 'visible' && now - lastInput < 90000 && dt < 20000 && S.player.name && (VIEW.name === 'play' || VIEW.name === 'results')) {
+    const t = today(); t.ms += dt; touchSession(t); LOG_DIRTY = true;
+  }
+}
+function touchSession(t){
+  const now = Date.now(); const s = t.sessions[t.sessions.length - 1];
+  if (s && now - s.e < 10 * 60000) s.e = now; else t.sessions.push({ s:now, e:now, att:0, cor:0 });
+  if (t.sessions.length > 40) t.sessions.splice(0, t.sessions.length - 40);
+}
+setInterval(() => { tickTime(); if (VIEW.name === 'home') updateRing(); }, 5000);
+document.addEventListener('visibilitychange', () => { tickTime(); if (document.visibilityState === 'hidden') { saveLocal(LOG_DIRTY); scheduleLogSync(true); } });
+addEventListener('pagehide', () => { tickTime(); saveLocal(LOG_DIRTY); scheduleLogSync(true); });
+
+// ---------------- Sound + confetti ----------------
+let AC = null;
+function beep(kind){
+  if (!S.settings.sound) return;
+  try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); const seq = kind === 'good' ? [660, 880] : kind === 'win' ? [523, 659, 784, 1046] : [300, 220];
+    seq.forEach((f, i) => { const o = AC.createOscillator(), g = AC.createGain(); o.type = 'triangle'; o.frequency.value = f; g.gain.setValueAtTime(0.0001, AC.currentTime + i * 0.09); g.gain.exponentialRampToValueAtTime(0.12, AC.currentTime + i * 0.09 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, AC.currentTime + i * 0.09 + 0.18); o.connect(g).connect(AC.destination); o.start(AC.currentTime + i * 0.09); o.stop(AC.currentTime + i * 0.09 + 0.2); });
+  } catch (_) {}
+}
+function confetti(n = 90){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const c = $('#confetti'); const x = c.getContext('2d'); c.width = innerWidth; c.height = innerHeight;
+  const cs = getComputedStyle(document.documentElement); const cols = ['--coral', '--teal', '--butter', '--lilac'].map(v => cs.getPropertyValue(v).trim());
+  const P = [...Array(n)].map(() => ({ x:innerWidth / 2 + (Math.random() - .5) * 200, y:innerHeight * .35, vx:(Math.random() - .5) * 12, vy:-Math.random() * 12 - 4, r:Math.random() * 6 + 4, c:cols[Math.floor(Math.random() * 4)], a:Math.random() * 6 }));
+  let f = 0; (function loop(){ x.clearRect(0, 0, c.width, c.height); P.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .45; p.a += .2; x.save(); x.translate(p.x, p.y); x.rotate(p.a); x.fillStyle = p.c; x.fillRect(-p.r / 2, -p.r / 4, p.r, p.r / 2); x.restore(); }); if (++f < 80) requestAnimationFrame(loop); else x.clearRect(0, 0, c.width, c.height); })();
+}
+function toast(msg){ const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); }
+
+// ---------------- Mascot + icons ----------------
+function mascot(mood = 'happy', size = 64){
+  const col = { coral:'var(--filling)', teal:'var(--teal)', butter:'var(--butter)', lilac:'var(--lilac)' }[S.player.color || 'coral'];
+  const mouth = mood === 'happy' ? '<path d="M25 40 Q32 47 39 40" stroke="var(--ink)" stroke-width="2.6" fill="none" stroke-linecap="round"/>'
+    : mood === 'wow' ? '<ellipse cx="32" cy="42" rx="4" ry="5" fill="var(--ink)"/>'
+    : mood === 'sad' ? '<path d="M26 44 Q32 39 38 44" stroke="var(--ink)" stroke-width="2.6" fill="none" stroke-linecap="round"/>'
+    : '<path d="M27 42 H37" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round"/>';
+  const eyes = mood === 'happy' ? '<path d="M21 30 Q24 26 27 30 M37 30 Q40 26 43 30" stroke="var(--ink)" stroke-width="2.6" fill="none" stroke-linecap="round"/>' : '<circle cx="24" cy="30" r="3" fill="var(--ink)"/><circle cx="40" cy="30" r="3" fill="var(--ink)"/>';
+  return '<svg viewBox="0 0 64 64" width="' + size + '" height="' + size + '" aria-hidden="true"><circle cx="32" cy="33" r="28" fill="var(--crust)"/><path d="M32 33 L32 9 A24 24 0 1 1 11.2 21 Z" fill="' + col + '"/><path d="M32 33 L11.2 21 A24 24 0 0 1 32 9 Z" fill="var(--sky)" opacity=".9"/>' + eyes + '<circle cx="18" cy="38" r="3.5" fill="var(--coral)" opacity=".45"/><circle cx="46" cy="38" r="3.5" fill="var(--coral)" opacity=".45"/>' + mouth + (mood === 'wow' ? '<path d="M54 10 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="var(--butter)"/>' : '') + '</svg>';
+}
+const ICON = {
+  lock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  star:(on) => '<svg viewBox="0 0 24 24"><path d="M12 2.8l2.8 5.9 6.4.8-4.7 4.4 1.2 6.4L12 17.2l-5.7 3.1 1.2-6.4L2.8 9.5l6.4-.8z" fill="' + (on ? 'var(--butter)' : 'var(--line)') + '" stroke="' + (on ? 'var(--warn)' : 'none') + '" stroke-width="1"/></svg>',
+  bulb:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z"/></svg>',
+  flame:'<svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 2s5 5 5 10a5 5 0 0 1-10 0c0-2 1-3.5 2-4.5 0 2 1 3 2 3 0-3-1-5 1-8.5z" fill="var(--coral)"/></svg>',
+  gem:'<svg viewBox="0 0 24 24" width="16" height="16"><path d="M6 3h12l4 6-10 12L2 9z" fill="var(--lilac)"/></svg>',
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg>',
+  book:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--warn)" stroke-width="2.2"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></svg>',
+  compass:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--teal)" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5l-2 5-5 2 2-5z" fill="var(--teal)"/></svg>',
+  twist:'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="var(--lilac)" stroke-width="2.4" stroke-linecap="round"><path d="M4 8c4-4 8 4 12 0M8 16c4-4 8 4 12 0"/></svg>',
+  padlock:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--ink2)" stroke-width="2.2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+};
+const starsHtml = (n, max = 3) => '<span class="stars">' + [...Array(max)].map((_, i) => ICON.star(i < n)).join('') + '</span>';
+
+// ---------------- Figures (SVG) ----------------
+function svgFig(f, o = {}){
+  const sel = o.sel || new Set(f.s || []); const inter = !!o.interactive; const fill = i => sel.has(i) ? 'var(--coral)' : 'var(--paper)';
+  const st = 'stroke="var(--ink)" stroke-width="2"';
+  const cls = i => inter ? ' class="cell" data-i="' + i + '" style="cursor:pointer"' : '';
+  if (f.k === 'grid') {
+    const cs = Math.min(56, Math.floor(300 / Math.max(f.c, 1)), Math.floor(220 / Math.max(f.r, 1))); const Wd = f.c * cs + 4, Ht = f.r * cs + 4; let s = '';
+    for (let r = 0; r < f.r; r++) for (let c = 0; c < f.c; c++) { const i = r * f.c + c; s += '<rect' + cls(i) + ' x="' + (2 + c * cs) + '" y="' + (2 + r * cs) + '" width="' + cs + '" height="' + cs + '" fill="' + fill(i) + '" ' + st + '/>'; }
+    return '<svg viewBox="0 0 ' + Wd + ' ' + Ht + '" width="' + Wd + '" height="' + Ht + '" role="img">' + s + '</svg>';
+  }
+  if (f.k === 'pie') {
+    const R0 = o.small ? 34 : 70, C = R0 + 4, n = f.n; let s = '';
+    if (n === 1) s = '<circle' + cls(0) + ' cx="' + C + '" cy="' + C + '" r="' + R0 + '" fill="' + fill(0) + '" ' + st + '/>';
+    else for (let i = 0; i < n; i++) { const a0 = -Math.PI / 2 + i * 2 * Math.PI / n, a1 = a0 + 2 * Math.PI / n; const x0 = C + R0 * Math.cos(a0), y0 = C + R0 * Math.sin(a0), x1 = C + R0 * Math.cos(a1), y1 = C + R0 * Math.sin(a1);
+      s += '<path' + cls(i) + ' d="M' + C + ' ' + C + ' L' + x0.toFixed(2) + ' ' + y0.toFixed(2) + ' A' + R0 + ' ' + R0 + ' 0 ' + (n === 2 ? 0 : 0) + ' 1 ' + x1.toFixed(2) + ' ' + y1.toFixed(2) + ' Z" fill="' + fill(i) + '" ' + st + ' stroke-linejoin="round"/>'; }
+    return '<svg viewBox="0 0 ' + 2 * C + ' ' + 2 * C + '" width="' + 2 * C + '" height="' + 2 * C + '" role="img">' + s + '</svg>';
+  }
+  if (f.k === 'dots') {
+    const cs = 48, Wd = f.c * cs + 12, Ht = f.r * cs + 12; let s = '<rect x="2" y="2" width="' + (Wd - 4) + '" height="' + (Ht - 4) + '" rx="10" fill="none" ' + st + '/>';
+    for (let r = 0; r < f.r; r++) for (let c = 0; c < f.c; c++) { const i = r * f.c + c; s += '<circle' + cls(i) + ' cx="' + (6 + cs / 2 + c * cs) + '" cy="' + (6 + cs / 2 + r * cs) + '" r="' + (cs / 2 - 7) + '" fill="' + fill(i) + '" ' + st + '/>'; }
+    return '<svg viewBox="0 0 ' + Wd + ' ' + Ht + '" width="' + Wd + '" height="' + Ht + '" role="img">' + s + '</svg>';
+  }
+  if (f.k === 'strip') {
+    const tot = f.w.reduce((a, b) => a + b, 0); let x = 2, s = ''; const Wd = 300;
+    f.w.forEach((w, i) => { const ww = w / tot * Wd; s += '<rect x="' + x.toFixed(1) + '" y="2" width="' + ww.toFixed(1) + '" height="60" fill="' + fill(i) + '" ' + st + '/>'; x += ww; });
+    return '<svg viewBox="0 0 304 64" width="304" height="64" role="img">' + s + '</svg>';
+  }
+  if (f.k === 'tri3') {
+    const A = [60, 6], B = [6, 100], C = [114, 100], G = [60, (6 + 100 + 100) / 3];
+    const p = (a, b, c) => 'M' + a + ' L' + b + ' L' + c + ' Z';
+    return '<svg viewBox="0 0 120 106" width="120" height="106"><path d="' + p(A, G, B) + '" fill="var(--coral)" ' + st + '/><path d="' + p(B, G, C) + '" fill="var(--paper)" ' + st + '/><path d="' + p(C, G, A) + '" fill="var(--paper)" ' + st + '/></svg>';
+  }
+  if (f.k === 'band') {
+    return '<svg viewBox="0 0 110 110" width="110" height="110"><defs><clipPath id="bc"><circle cx="55" cy="55" r="48"/></clipPath></defs><circle cx="55" cy="55" r="48" fill="var(--paper)"/><rect x="0" y="44" width="110" height="22" fill="var(--coral)" clip-path="url(#bc)"/><line x1="7" y1="44" x2="103" y2="44" ' + st + ' clip-path="url(#bc)"/><line x1="7" y1="66" x2="103" y2="66" ' + st + ' clip-path="url(#bc)"/><circle cx="55" cy="55" r="48" fill="none" ' + st + '/></svg>';
+  }
+  if (f.k === 'row') return f.items.map(it => svgFig(Object.assign({}, it), { small:true })).join('');
+  if (f.k === 'nl') return numberLine(f.max, f.den, o.pick != null ? o.pick : f.at, !!o.interactive);
+  return '';
+}
+function numberLine(max, den, at, inter){
+  const Wd = 620, L = 30, Rr = Wd - 30, y = 50, n = max * den; const step = (Rr - L) / n; let s = '<line x1="' + (L - 14) + '" y1="' + y + '" x2="' + (Rr + 14) + '" y2="' + y + '" stroke="var(--ink)" stroke-width="3" stroke-linecap="round"/>';
+  for (let i = 0; i <= n; i++) { const x = L + i * step; const whole = i % den === 0; s += '<line x1="' + x + '" y1="' + (y - (whole ? 14 : 9)) + '" x2="' + x + '" y2="' + (y + (whole ? 14 : 9)) + '" stroke="var(--ink)" stroke-width="' + (whole ? 3 : 2) + '"/>';
+    if (whole) s += '<text x="' + x + '" y="' + (y + 36) + '" text-anchor="middle" font-family="Fredoka, sans-serif" font-size="20" font-weight="600" fill="var(--ink)">' + (i / den) + '</text>';
+    if (inter) s += '<rect class="tick" data-i="' + i + '" x="' + (x - step / 2) + '" y="' + (y - 30) + '" width="' + step + '" height="60" fill="transparent" style="cursor:pointer"/>'; }
+  if (at != null && at !== '') s += '<circle cx="' + (L + at * step) + '" cy="' + y + '" r="10" fill="var(--coral)" stroke="var(--ink)" stroke-width="2"/>';
+  return '<svg viewBox="0 0 ' + Wd + ' 100" width="' + Wd + '" height="100" role="img" style="max-width:100%">' + s + '</svg>';
+}
+
+// ---------------- Scoring, ranks, badges ----------------
+const RANKS = [['Crumb', 0], ['Slice', 150], ['Quarter', 400], ['Half', 800], ['Whole', 1400], ['Double', 2200], ['Fraction Master', 3200], ['Fraction Legend', 4500]];
+function rankOf(xp){ let r = RANKS[0], next = null; for (let i = 0; i < RANKS.length; i++) { if (xp >= RANKS[i][1]) { r = RANKS[i]; next = RANKS[i + 1] || null; } } return { name:r[0], next }; }
+const BADGES = {
+  first:['First Slice','Your first correct answer'], simpl:['Simplifier','20 answers simplified without a reminder'], nohint:['No Hints Hero','A full round with no hints'],
+  twist:['Twist Tamer','Passed a Twist level'], hopper:['Island Hopper','Passed Explorer on 3 islands'], streak10:['On Fire','10 correct in a row'],
+  perfect:['Perfect Ten','10 out of 10 first try'], book:['Bookworm','Every textbook question on an island solved'], goal3:['Steady Climber','Met the daily goal on 3 days'], crown:['Crown Wearer','Passed Crown Island Twist'],
+};
+function award(id){ if (S.badges[id]) return false; S.badges[id] = Date.now(); RUN && RUN.newBadges.push(id); return true; }
+function levelUnlocked(w, L){
+  if (S.settings.unlockAll) return true;
+  if (w > 1 && w < 12 && !(W(w - 1).L2.best >= 7)) return false;
+  if (w === 12 && [...Array(11)].filter((_, i) => W(i + 1).L2.best >= 7).length < 6) return false;
+  if (L === 1) return true; if (L === 2) return W(w).L1.best >= 7 || W(w).L2.rounds > 0; return W(w).L2.best >= 7 || W(w).L3.rounds > 0;
+}
+const starsFor = best => best >= 10 ? 3 : best >= 8.5 ? 2 : best >= 7 ? 1 : 0;
+
+// ---------------- Generic hints ----------------
+const GH = {
+  meaning:['Count all the EQUAL parts. That number goes on the bottom.','Count the parts you want. That number goes on top.'],
+  collection:['What is the whole here? How many in total?','The part goes on top, the whole on the bottom. Then simplify.'],
+  numline:['How many equal jumps are there between 0 and 1?','Each jump is one piece of that size. Count jumps from 0.'],
+  proper:['Compare the numerator with the denominator.','Top smaller than bottom means less than 1.'],
+  mixed:['Mixed to improper: wholes × denominator, then add the numerator.','Improper to mixed: divide. The remainder goes on top.'],
+  equiv:['Multiply or divide top AND bottom by the same number.','What was the denominator multiplied by?'],
+  simplest:['Find a number that divides both the top and bottom.','Keep dividing until only 1 divides both. The HCF does it in one go.'],
+  compare:['Same denominator? Compare tops. Same numerator? The smaller bottom wins.','Otherwise cross multiply, or use a common denominator.'],
+  order:['Use one common denominator for all of them.','Then put the numerators in order.'],
+  addlike:['The pieces are the same size, so just add (or subtract) the tops.','The denominator stays the same. Then simplify.'],
+  addunlike:['Can you add pieces of different sizes? Make the denominators the same first.','Find the LCM of the denominators and rewrite both fractions.'],
+  sub:['Make the denominators the same first.','For mixed numbers, change them to improper fractions first. That avoids borrowing trouble.'],
+  mulwhole:['Multiply the whole number by the numerator. Keep the denominator.','Cancel common factors first to keep the numbers small.'],
+  mulfrac:['Top × top and bottom × bottom.','Change mixed numbers into improper fractions FIRST. Cancel before multiplying.'],
+  div:['Dividing by a fraction is multiplying by its reciprocal.','Keep the first, flip the second, then multiply.'],
+  bodmas:['BODMAS: Brackets, Of, Division and Multiplication, Addition and Subtraction.','Do one step, rewrite the line, then the next step.'],
+  word:['What do you know? What do you need to find?','Which operation joins them: add, subtract, multiply or divide?'],
+};
+function hintsFor(q){
+  const hs = (q.hint && q.hint.length ? q.hint : GH[q.sk] || []).slice();
+  if (q.e && q.sol && q.sol.length > 1) { const first = q.sol.find(l => !l.startsWith('<b>')); if (first) hs.push('First step: ' + first); }
+  return hs.slice(0, 3);
+}
+
+// ---------------- Round building ----------------
+function bookFor(w){ return (BOOK[w] || []).map(q => prepare(q)).filter(q => !q._broken); }
+function buildRound(w, L){
+  if (L === 1) {
+    const all = bookFor(w); const seen = W(w).L1.seen;
+    const unsolved = R.shuffle(all.filter(q => seen[q.id] !== 1)); const solved = R.shuffle(all.filter(q => seen[q.id] === 1));
+    const out = unsolved.concat(solved).slice(0, 10);
+    while (out.length < 10) out.push(makeQuestion(w, 2));
+    return out;
+  }
+  const qs = []; const n = 10;
+  if (L === 3 && w > 1 && w < 12) { for (let i = 0; i < 2; i++) { const pw = R.int(1, w - 1); qs.push(Object.assign(makeQuestion(pw, R.pick([2, 3])), { review:pw })); } }
+  pullRetries(qs, r => r.w === w, 2);
+  while (qs.length < n) qs.push(makeQuestion(w, L));
+  return R.shuffle(qs);
+}
+function pullRetries(qs, pred, max){
+  const list = (S.retry || []).filter(pred).slice(0, max);
+  list.forEach(r => { try { const q = prepare(JSON.parse(JSON.stringify(r.spec))); q.id = 'r-' + Math.random().toString(36).slice(2, 8); q.gen = true; q.retried = r; q.again = true; if (!q._broken) qs.push(q); } catch (_) {} });
+}
+function buildDailyMix(){
+  const open = []; for (let w = 1; w <= 11; w++) if (levelUnlocked(w, 2)) open.push(w);
+  if (!open.length) open.push(1);
+  const skillAcc = sk => { const s = S.skills[sk]; return s && s.a >= 3 ? s.c / s.a : 0.6; };
+  const weightOf = w => { const sks = new Set(bookFor(w).map(q => q.sk)); let worst = 1; sks.forEach(k => { worst = Math.min(worst, skillAcc(k)); }); return 1.4 - worst; };
+  const weights = open.map(weightOf); const tot = weights.reduce((a, b) => a + b, 0);
+  const qs = []; pullRetries(qs, () => true, 4); while (qs.length < 10) { let r = Math.random() * tot, i = 0; while (r > weights[i] && i < weights.length - 1) { r -= weights[i]; i++; } qs.push(Object.assign(makeQuestion(open[i], levelUnlocked(open[i], 3) && Math.random() < .5 ? 3 : 2), { review:open[i] })); }
+  return qs;
+}
+
+// ---------------- Router + views ----------------
+let VIEW = { name:'home' }; let RUN = null;
+function route(){
+  const app = $('#app');
+  if (!S.player.name) return renderOnboard(app);
+  if (VIEW.name === 'play') return renderPlay(app);
+  if (VIEW.name === 'results') return renderResults(app);
+  if (VIEW.name === 'parent') return renderParent(app);
+  return renderHome(app);
+}
+function go(name, extra = {}){ VIEW = Object.assign({ name }, extra); route(); scrollTo(0, 0); }
+
+function renderOnboard(app){
+  app.innerHTML = '<div class="play" style="max-width:520px;margin-top:6vh"><div class="card" style="text-align:center"><div class="mascot">' + mascot('wow', 96) + '</div><h1 style="font-size:32px;margin:8px 0">Fraction Quest</h1><p class="muted">Hop across 12 islands, one for each part of your fractions chapter. Warm up with your textbook, then take on fresh puzzles and twists.</p>'
+    + '<div class="field" style="text-align:left"><label for="nm">What should I call you?</label><input id="nm" maxlength="20" autocomplete="off" placeholder="Your name"></div>'
+    + '<div class="field" style="text-align:left"><label>Pick your pie buddy\'s colour</label><div class="actions" id="cols">' + ['coral', 'teal', 'butter', 'lilac'].map(c => '<button class="btn ghost small" data-c="' + c + '" style="border-color:var(--' + c + ')">' + c[0].toUpperCase() + c.slice(1) + '</button>').join('') + '</div></div>'
+    + '<button class="btn coral" id="start" style="width:100%;margin-top:8px">Start the quest</button></div></div>';
+  let col = 'coral';
+  $$('#cols button').forEach(b => b.onclick = () => { col = b.dataset.c; $$('#cols button').forEach(x => x.style.background = ''); b.style.background = 'var(--' + col + '-s)'; });
+  $('#start').onclick = () => { const n = $('#nm').value.replace(/[<>&"']/g, '').trim(); if (!n) { $('#nm').focus(); return; } S.player.name = n; S.player.color = col; PLAYER = S.player; saveLocal(true); go('home'); };
+  $('#nm').addEventListener('keydown', e => { if (e.key === 'Enter') $('#start').click(); });
+}
+
+function ringSvg(frac, size = 86){ const r = size / 2 - 7, c = 2 * Math.PI * r; return '<svg width="' + size + '" height="' + size + '"><circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" stroke="var(--line)" stroke-width="9" fill="none"/><circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" stroke="var(--teal)" stroke-width="9" fill="none" stroke-linecap="' + (frac > 0.01 ? 'round' : 'butt') + '" stroke-dasharray="' + (c * Math.min(1, frac)).toFixed(1) + ' ' + c.toFixed(1) + '"/></svg>'; }
+function updateRing(){ const el = $('#ring'); if (!el) return; const t = today(); el.innerHTML = ringSvg(t.ms / (S.settings.goalMin * 60000)) + '<b>' + mins(t.ms) + '<small>of ' + S.settings.goalMin + ' min</small></b>'; }
+function dayStreak(){ let n = 0; const d = new Date(); for (let i = 0; i < 365; i++) { const k = dayKey(d.getTime() - i * 86400000); const x = S.days[k]; if (x && x.att > 0) n++; else if (i > 0) break; } return n; }
+
+function renderHome(app){
+  const rk = rankOf(S.xp); const t = today(); const streak = dayStreak();
+  const greet = t.att === 0 ? 'Ready for today\'s quest, ' + esc(S.player.name) + '?' : t.ms >= S.settings.goalMin * 60000 ? 'Daily goal smashed, ' + esc(S.player.name) + '!' : 'Nice going, ' + esc(S.player.name) + '. Keep hopping!';
+  let html = '<div class="top"><div class="brand">' + mascot('happy', 46) + '<div><h1>Fraction Quest</h1><small>Chapter 5 · Fractions</small></div></div>'
+    + '<span class="chip tnum" title="Rank">' + ICON.gem + rk.name + ' · ' + S.xp + ' XP</span><span class="chip tnum" title="Days in a row">' + ICON.flame + streak + ' day' + (streak === 1 ? '' : 's') + '</span>'
+    + '<button class="iconbtn" id="parentBtn" title="Parent area" aria-label="Parent area">' + ICON.lock + '</button></div>';
+  if (MODE.kind === 'demo') html += '<div class="panel" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px"><b>Demo mode.</b><span class="muted" style="flex:1;min-width:200px">Everything works, including the parent report behind the lock. Progress stays in this browser only.</span><button class="btn ghost small" id="exitDemo">Exit demo</button></div>';
+  html += '<div class="hero"><div class="mascot">' + mascot(t.att ? 'wow' : 'happy', 72) + '</div><div><div class="say">' + greet + '</div><div class="sub tnum">Today: ' + t.att + ' questions · ' + (t.att ? Math.round(100 * t.cor / t.att) : 0) + '% correct' + (rk.next ? ' · ' + (rk.next[1] - S.xp) + ' XP to ' + rk.next[0] : '') + '</div><div class="actions"><button class="btn coral" id="mixBtn">Daily Mix</button><button class="btn ghost" id="contBtn">Continue where I left off</button></div></div><div class="ring" id="ring"></div></div>';
+  html += '<div class="map">';
+  for (let w = 1; w <= 12; w++) {
+    const info = WORLDS[w]; const ws = W(w); const lockedW = !levelUnlocked(w, 1);
+    const bookN = bookFor(w).length; const solved = Object.values(ws.L1.seen).filter(v => v === 1).length;
+    const lv = (L, icon, name, sub) => { const un = levelUnlocked(w, L); const best = ws['L' + L].best; return '<button class="lv" data-w="' + w + '" data-l="' + L + '" ' + (un ? '' : 'disabled') + '>' + (un ? icon : ICON.padlock) + '<span class="nm">' + name + '<small>' + sub + '</small></span>' + starsHtml(starsFor(best)) + '</button>'; };
+    html += '<div class="isle c-' + info.color + (lockedW ? ' locked' : '') + '"><svg class="blob" viewBox="0 0 44 44"><path d="M22 3c11 0 19 7 19 18s-9 20-20 20S3 33 3 22 11 3 22 3z" fill="var(--' + info.color + '-s)"/><text x="22" y="28" text-anchor="middle" font-family="Fredoka,sans-serif" font-weight="700" font-size="15" fill="var(--' + (info.color === 'butter' ? 'warn' : info.color) + ')">' + (w === 12 ? '★' : w) + '</text></svg>'
+      + '<span class="ex">' + (w === 12 ? 'Revision' : 'Ex ' + info.ex) + '</span><h3>' + info.name + '</h3><div class="topic">' + info.topic + '</div>'
+      + lv(1, ICON.book, 'Warm-up', 'Textbook · ' + solved + '/' + bookN + ' solved') + lv(2, ICON.compass, 'Explorer', 'Fresh questions') + lv(3, ICON.twist, 'Twist', 'Think harder')
+      + '<button class="learnlink" data-learn="' + w + '">Learn the idea</button></div>';
+  }
+  html += '</div><p class="note" style="margin-top:18px">Pass a level by scoring 7 out of 10. First try with no hints scores a full point; a fix after a hint or a retry scores half.' + (SYNC.mode === 'cloud' ? ' Progress is saved online.' : '') + '</p>';
+  app.innerHTML = html; updateRing();
+  $$('.lv').forEach(b => b.onclick = () => startRound(+b.dataset.w, +b.dataset.l));
+  $$('[data-learn]').forEach(b => b.onclick = () => showLearn(+b.dataset.learn));
+  $('#mixBtn').onclick = () => startRound(0, 0);
+  $('#contBtn').onclick = () => { for (let w = 1; w <= 12; w++) for (let L = 1; L <= 3; L++) if (levelUnlocked(w, L) && W(w)['L' + L].best < 7) return startRound(w, L); startRound(0, 0); };
+  $('#parentBtn').onclick = () => parentGate();
+  const xd = $('#exitDemo'); if (xd) xd.onclick = () => { ssSet('fq.demo', null); location.hash = ''; location.reload(); };
+}
+
+function showLearn(w){
+  const c = LEARN[w]; const info = WORLDS[w];
+  const m = document.createElement('div'); m.className = 'modal';
+  m.innerHTML = '<div class="sheet" role="dialog" aria-label="Learn"><div class="qhead"><span class="tag">' + (w === 12 ? 'Revision' : 'Ex ' + info.ex) + '</span>' + info.name + '</div><div class="learnbig">' + rich(c.big) + '</div>' + (c.fig ? '<div class="figwrap">' + svgFig(c.fig) + '</div>' : '') + '<ul>' + c.pts.map(p => '<li>' + rich(p) + '</li>').join('') + '</ul><div class="think"><b>Think about it:</b> ' + rich(c.ask) + '</div><div class="ctrl"><span></span><button class="btn" id="lclose">Got it</button></div></div>';
+  document.body.appendChild(m); $('#lclose', m).onclick = () => m.remove(); m.onclick = e => { if (e.target === m) m.remove(); };
+}
+
+// ---------------- Play ----------------
+function startRound(w, L){
+  const qs = w === 0 ? buildDailyMix() : buildRound(w, L);
+  RUN = { w, L, qs, i:0, results:[], streak:0, hintsTotal:0, newBadges:[], startedAt:Date.now(), xpStart:S.xp };
+  newQ(); go('play');
+}
+function newQ(){ RUN.cur = { tries:0, hints:0, shown:[], nudged:false, done:false, t0:Date.now(), sel:new Set(), pick:null, order:[], given:'' }; }
+function levelLabel(){ return RUN.w === 0 ? 'Daily Mix' : (RUN.w === 12 ? 'Crown Island' : 'Ex ' + WORLDS[RUN.w].ex + ' · ' + WORLDS[RUN.w].name) + ' · ' + ['', 'Warm-up', 'Explorer', 'Twist'][RUN.L]; }
+
+function renderPlay(app){
+  const q = RUN.qs[RUN.i]; const C = RUN.cur;
+  const dots = RUN.qs.map((_, i) => { const r = RUN.results[i]; return '<i class="' + (i === RUN.i && !C.done ? 'cur' : r == null ? '' : r.ok === 1 ? 'ok' : r.ok > 0 ? 'half' : 'no') + '"></i>'; }).join('');
+  const tag = RUN.L === 1 && !q.gen ? '<span class="tag book">Textbook</span>' : q.again ? '<span class="tag twist">Try again</span>' : q.review ? '<span class="tag">Review · Ex ' + WORLDS[q.review].ex + '</span>' : RUN.L === 3 ? '<span class="tag twist">Twist</span>' : '<span class="tag">Fresh</span>';
+  let html = '<div class="play"><div class="pbar"><button class="iconbtn" id="quit" aria-label="Back to map">' + ICON.back + '</button><div class="dots">' + dots + '</div><span class="chip tnum">' + ICON.flame + RUN.streak + '</span></div>'
+    + '<div class="card"><div class="qhead">' + tag + '<span>' + esc(levelLabel()) + '</span><span style="margin-left:auto" class="tnum">' + (RUN.i + 1) + ' / ' + RUN.qs.length + '</span></div>'
+    + '<div class="q">' + rich(q.q) + '</div>' + bodyFor(q) + '<div id="fb"></div>'
+    + '<div class="ctrl"><button class="btn ghost small hintbtn" id="hint">' + ICON.bulb + 'Hint</button><span style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost small" id="show" hidden>Show me how</button><button class="btn coral" id="check">Check</button><button class="btn teal" id="next" hidden>Next</button></span></div></div></div>';
+  app.innerHTML = html;
+  wireBody(q);
+  $('#quit').onclick = () => { if (RUN.results.length) finishRound(true); else go('home'); };
+  $('#check').onclick = () => doCheck(q);
+  $('#next').onclick = () => nextQ();
+  $('#hint').onclick = () => doHint(q);
+  $('#show').onclick = () => reveal(q, true);
+  updateHintBtn(q);
+  const first = $('.box, .opt, input', $('.card')); if (first && first.focus && first.tagName === 'INPUT') setTimeout(() => first.focus(), 50);
+}
+function fracInput(prefix = '', opts = {}){
+  const showW = opts.whole !== false;
+  return '<span class="fin">' + (showW ? '<input class="box w" id="' + prefix + 'w" inputmode="numeric" autocomplete="off" aria-label="Whole number (leave empty if none)" placeholder=" ">' : '') + '<span class="stack"><input class="box" id="' + prefix + 'n" inputmode="numeric" autocomplete="off" aria-label="Numerator"><hr><input class="box" id="' + prefix + 'd" inputmode="numeric" autocomplete="off" aria-label="Denominator"></span></span>';
+}
+function bodyFor(q){
+  const fig = q.fig ? '<div class="figwrap" id="fig">' + svgFig(q.fig, { interactive: q.t === 'shade', sel: q.t === 'shade' ? RUN.cur.sel : undefined }) + '</div>' : '';
+  switch (q.t) {
+    case 'frac': case 'read': {
+      const whole = !(q.form === 'improper' || q.form === 'exact');
+      return fig + '<div class="answer">' + fracInput('', { whole }) + (q.unit ? '<span class="unit">' + esc(q.unit) + '</span>' : '') + '</div><p class="note" style="text-align:center">' + (whole ? 'Whole number box is optional. For a whole number answer, type it in the big box only.' : 'Type the numerator on top and the denominator below.') + '</p>';
+    }
+    case 'num': return fig + '<div class="answer">' + (q.unit === '₹' ? '<span class="unit">₹</span>' : '') + '<input class="box wide" id="x" inputmode="numeric" autocomplete="off" aria-label="Answer">' + (q.unit && q.unit !== '₹' ? '<span class="unit">' + esc(q.unit) + '</span>' : '') + '</div>';
+    case 'mcq': return (q.figOpts ? '<div class="figs4">' + q.figOpts.map((f, i) => '<div>' + svgFig(f) + '<div>' + 'ABCD'[i] + '</div></div>').join('') + '</div>' : fig) + '<div class="opts">' + q.opts.map((o, i) => '<button class="opt" data-i="' + i + '">' + rich(o) + '</button>').join('') + '</div>';
+    case 'yn': return fig + '<div class="opts" style="max-width:420px;margin:0 auto"><button class="opt" data-i="1" style="text-align:center">Yes</button><button class="opt" data-i="0" style="text-align:center">No</button></div>';
+    case 'cmp': return '<div class="cmpwrap">' + rich(srcTok(q.L)) + '<span class="slot" id="slot">?</span>' + rich(srcTok(q.R)) + '</div><div class="cmpbtns" style="margin-top:14px">' + ['<', '=', '>'].map(s => '<button class="opt" data-s="' + s + '">' + esc(s) + '</button>').join('') + '</div>';
+    case 'order': return '<div class="order"><div class="olabel">Your order (' + (q.dir === 'asc' ? 'smallest first' : 'largest first') + ')</div><div class="orow" id="ans"></div><div class="olabel">Tap to place</div><div class="orow pool" id="pool"></div></div>';
+    case 'open': return fig + '<div class="answer" style="flex-direction:column">' + [...Array(q.n)].map((_, i) => q.v === 'pairsum' ? '<span class="fin"><input class="box wide" id="o' + i + 'a" placeholder="e.g. 1/3" autocomplete="off"><b>+</b><input class="box wide" id="o' + i + 'b" placeholder="e.g. 2/3" autocomplete="off"></span>' : '<input class="box wide" id="o' + i + '" placeholder="e.g. 3/4" autocomplete="off">').join('') + '</div><p class="note" style="text-align:center">Type fractions like 3/4, or mixed numbers like 1 1/2.</p>';
+    case 'shade': return fig + '<p class="note tnum" id="shcount" style="text-align:center">Tap parts to shade them. 0 shaded.</p>';
+    case 'line': return '<div class="figwrap" id="fig">' + numberLine(q.max, q.den, null, true) + '</div><div class="cmpbtns"><button class="btn ghost small" id="jl" aria-label="Move one jump left">◀ One jump</button><button class="btn ghost small" id="jr" aria-label="Move one jump right">One jump ▶</button></div><p class="note" style="text-align:center">Tap a mark on the line, or use the jump buttons to move the dot.</p>';
+  }
+  return '';
+}
+function wireBody(q){
+  const C = RUN.cur;
+  const boxes = $$('.card input.box');
+  boxes.forEach((b, i) => b.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); if (!C.done) $('#check').click(); else $('#next').click(); }
+    if (e.key === '/' && b.id.endsWith('n')) { e.preventDefault(); const d = $('#' + b.id.slice(0, -1) + 'd'); d && d.focus(); }
+    if (e.key === ' ' && b.id.endsWith('w')) { e.preventDefault(); const n = $('#' + b.id.slice(0, -1) + 'n'); n && n.focus(); }
+  }));
+  if (q.t === 'mcq' || q.t === 'yn') $$('.opt').forEach(b => b.onclick = () => { if (C.done) return; $$('.opt').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); C.pick = +b.dataset.i; });
+  if (q.t === 'cmp') $$('.cmpbtns .opt').forEach(b => b.onclick = () => { if (C.done) return; $$('.cmpbtns .opt').forEach(x => x.classList.remove('sel')); b.classList.add('sel'); C.pick = b.dataset.s; $('#slot').textContent = b.dataset.s; });
+  if (q.t === 'shade') { const wire = () => $$('#fig .cell').forEach(c => c.onclick = () => { if (C.done) return; const i = +c.dataset.i; C.sel.has(i) ? C.sel.delete(i) : C.sel.add(i); $('#fig').innerHTML = svgFig(q.fig, { interactive:true, sel:C.sel }); const tot = q.fig.k === 'pie' ? q.fig.n : q.fig.r * q.fig.c; $('#shcount').textContent = C.sel.size + ' of ' + tot + ' parts shaded.'; wire(); }); wire(); }
+  if (q.t === 'line') { const n = q.max * q.den; const put = i => { if (C.done) return; C.pick = Math.max(0, Math.min(n, i)); $('#fig').innerHTML = numberLine(q.max, q.den, C.pick, true); wire(); };
+    const wire = () => $$('#fig .tick').forEach(c => c.onclick = () => put(+c.dataset.i)); wire();
+    $('#jl').onclick = () => put((C.pick == null ? 0 : C.pick) - 1); $('#jr').onclick = () => put(C.pick == null ? 1 : C.pick + 1); }
+  if (q.t === 'order') {
+    if (!C.pool) C.pool = R.shuffle(q.items.slice());
+    const draw = () => {
+      const chip = s => rich(s.includes('/') ? '{' + s + '}' : s);
+      $('#ans').innerHTML = C.order.map((s, i) => '<button class="ochip" data-a="' + i + '">' + chip(s) + '</button>').join('') || '<span class="note">Tap fractions below to place them here.</span>';
+      $('#pool').innerHTML = C.pool.filter(s => !C.order.includes(s)).map(s => '<button class="ochip" data-p="' + esc(s) + '">' + chip(s) + '</button>').join('') || '<span class="note">All placed. Tap one above to take it back.</span>';
+      $$('#pool .ochip').forEach(b => b.onclick = () => { if (C.done) return; C.order.push(b.dataset.p); draw(); });
+      $$('#ans .ochip').forEach(b => b.onclick = () => { if (C.done) return; C.order.splice(+b.dataset.a, 1); draw(); });
+    }; draw();
+  }
+}
+function readFrac(s){ s = String(s || '').trim().replace(/\s+/g, ' '); if (!s) return null; try { return F(s); } catch (_) { return undefined; } }
+
+function evaluateAnswer(q){
+  const C = RUN.cur;
+  if (q.t === 'frac' || q.t === 'read') { const inp = { w:($('#w') || {}).value, n:$('#n').value, d:$('#d').value }; C.given = [inp.w, inp.n && inp.d ? inp.n + '/' + inp.d : inp.n].filter(Boolean).join(' '); return checkFrac(q, inp); }
+  if (q.t === 'num') { const x = $('#x').value; C.given = x; return checkNum(q, { x }); }
+  if (q.t === 'mcq') { if (C.pick == null) return { status:'invalid', msg:'Pick an answer first.' }; C.given = plain(q.opts[C.pick]); return { status: C.pick === q.a ? 'correct' : 'wrong' }; }
+  if (q.t === 'yn') { if (C.pick == null) return { status:'invalid', msg:'Pick Yes or No.' }; C.given = C.pick ? 'Yes' : 'No'; return { status: (C.pick === 1) === q.a ? 'correct' : 'wrong' }; }
+  if (q.t === 'cmp') { if (C.pick == null) return { status:'invalid', msg:'Pick a sign.' }; C.given = C.pick; return { status: C.pick === q._ans ? 'correct' : 'wrong' }; }
+  if (q.t === 'order') { if (C.order.length !== q.items.length) return { status:'invalid', msg:'Place all ' + q.items.length + ' fractions first.' }; C.given = C.order.join(', '); const ok = C.order.every((s, i) => F(s).eq(F(q._ans[i]))); if (!ok && C.order.every((s, i) => F(s).eq(F(q._ans[q._ans.length - 1 - i])))) return { status:'wrong', msg:'You have them in the opposite order. Read the question again: ' + (q.dir === 'asc' ? 'smallest first.' : 'largest first.') }; return { status: ok ? 'correct' : 'wrong' }; }
+  if (q.t === 'shade') { const tot = q.fig.k === 'pie' ? q.fig.n : q.fig.r * q.fig.c; if (!C.sel.size) return { status:'invalid', msg:'Tap some parts to shade them.' }; C.given = C.sel.size + '/' + tot; return { status: new Frac(C.sel.size, tot).eq(q._ans) ? 'correct' : 'wrong', msg: !new Frac(C.sel.size, tot).eq(q._ans) ? 'You shaded ' + C.sel.size + ' of ' + tot + ' parts. That is ' + new Frac(C.sel.size, tot).tok() + ', not ' + q._ans.tok() + '.' : '' }; }
+  if (q.t === 'line') { if (C.pick == null) return { status:'invalid', msg:'Tap a mark on the line.' }; const v = new Frac(C.pick, q.den); C.given = v.tok().replace(/[{}]/g, ''); return { status: v.eq(q._ans) ? 'correct' : 'wrong', msg: v.eq(q._ans) ? '' : 'You marked ' + v.tok() + '. Count the jumps again.' }; }
+  if (q.t === 'open') {
+    const list = [];
+    for (let i = 0; i < q.n; i++) {
+      if (q.v === 'pairsum') { const a = readFrac($('#o' + i + 'a').value), b = readFrac($('#o' + i + 'b').value); if (!a || !b) return { status:'invalid', msg: a === undefined || b === undefined ? 'Write fractions like 3/4.' : 'Fill in every box.' }; list.push([a, b]); }
+      else { const a = readFrac($('#o' + i).value); if (!a) return { status:'invalid', msg: a === undefined ? 'Write fractions like 3/4.' : 'Fill in every box.' }; list.push(a); }
+    }
+    C.given = list.map(x => Array.isArray(x) ? x[0].rn + '/' + x[0].rd + ' + ' + x[1].rn + '/' + x[1].rd : x.rn + '/' + x.rd).join('; ');
+    const flat = q.v === 'pairsum' ? list.map(([a, b]) => new Frac(Math.min(a.rn * b.rd, b.rn * a.rd), a.rd * b.rd)) : list;
+    const keys = list.map(x => q.v === 'pairsum' ? [x[0].key(), x[1].key()].sort().join('|') : q.v === 'between' ? x.key() : x.rn + '/' + x.rd);
+    if (q.n > 1 && new Set(keys).size !== keys.length) return { status:'wrong', msg:'Your answers must all be different.' + (q.v === 'between' ? ' Fractions that simplify to the same thing count as the same.' : '') };
+    const m = VALIDATORS[q.v](q.p, list); return m ? { status:'wrong', msg:m } : { status:'correct' };
+  }
+  return { status:'invalid', msg:'Unknown question type.' };
+}
+function expectedText(q){
+  if (q._ans && q._ans.tok) return untok(q._ans.tok());
+  if (q.t === 'mcq') return plain(q.opts[q.a]); if (q.t === 'yn') return q.a ? 'Yes' : 'No'; if (q.t === 'cmp') return q._ans; if (q.t === 'order') return q._ans.join(', ');
+  return '(open answer)';
+}
+function solutionHtml(q){
+  const lines = [];
+  if (q.why) lines.push('<p>' + rich(q.why) + '</p>');
+  if (q.sol && q.sol.length) lines.push('<ol>' + q.sol.filter(l => !l.startsWith('<b>') || q.sol.length > 3).map(l => '<li>' + rich(l) + '</li>').join('') + '</ol>');
+  if (!lines.length && q._ans && q._ans.tok) lines.push('<p>The answer is ' + rich(q._ans.tok()) + '.</p>');
+  if (!lines.length && q.t === 'mcq') lines.push('<p>The answer is ' + rich(q.opts[q.a]) + '.</p>');
+  if (!lines.length && q.t === 'yn') lines.push('<p>The answer is ' + (q.a ? 'Yes' : 'No') + '.</p>');
+  if (!lines.length && q.t === 'order') lines.push('<p>' + rich(q._ans.map(s => '{' + s + '}').join(q.dir === 'asc' ? ' &lt; ' : ' &gt; ')) + '</p>');
+  if (!lines.length && q.t === 'cmp') lines.push('<p>Cross multiply or use a common denominator. The sign is ' + esc(q._ans) + '.</p>');
+  if (q.t === 'line' || q.t === 'shade') lines.push('<p>The answer is ' + rich(q._ans.tok()) + '.</p>');
+  return lines.join('');
+}
+function fbBox(kind, title, body, mood){ $('#fb').innerHTML = '<div class="fb ' + kind + '"><div class="mascot">' + mascot(mood, 52) + '</div><div><h4>' + title + '</h4>' + body + '</div></div>'; }
+function updateHintBtn(q){ const hs = hintsFor(q); const left = hs.length - RUN.cur.hints; const b = $('#hint'); if (!b) return; b.disabled = left <= 0 || RUN.cur.done; b.innerHTML = ICON.bulb + (left > 0 ? 'Hint (' + left + ')' : 'No more hints'); }
+function doHint(q){
+  const C = RUN.cur; const hs = hintsFor(q); if (C.hints >= hs.length || C.done) return; C.hints++; RUN.hintsTotal++;
+  fbBox('hint', 'Hint ' + C.hints, '<ol>' + hs.slice(0, C.hints).map(h => '<li>' + rich(h) + '</li>').join('') + '</ol>', 'think');
+  updateHintBtn(q); if (C.hints >= hs.length) $('#show').hidden = false;
+}
+const MAX_TRIES = q => (q.t === 'yn' || q.t === 'cmp') ? 1 : q.t === 'mcq' ? 2 : 3;
+function doCheck(q){
+  const C = RUN.cur; if (C.done) return;
+  const r = evaluateAnswer(q);
+  if (r.status === 'invalid') { fbBox('mid', 'Almost ready', '<p>' + rich(r.msg) + '</p>', 'think'); return; }
+  if (r.status === 'unsimplified' || r.status === 'wrongform') { C.nudged = true; fbBox('mid', r.status === 'unsimplified' ? 'Right value! One more step' : 'Right value, wrong form', '<p>' + rich(r.msg) + '</p>', 'wow'); beep('good'); return; }
+  if (r.status === 'correct') {
+    const perfect = C.tries === 0 && C.hints === 0 && !C.nudged; C.done = true; RUN.streak++;
+    const xp = perfect ? 10 : 5; const bonus = RUN.streak >= 3 ? 2 : 0; S.xp += xp + bonus;
+    if (perfect && q.t === 'frac' && q._ans && !q._ans.isInt() && q.form !== 'exact') { S.simpl = (S.simpl || 0) + 1; if (S.simpl >= 20) award('simpl'); }
+    award('first'); if (RUN.streak >= 10) award('streak10');
+    const praise = perfect ? R.pick(['Brilliant!', 'Spot on!', 'Nailed it!', 'Super!', 'Yes! First try!']) : R.pick(['You got there!', 'Correct!', 'Well fixed!']);
+    fbBox('good', praise + ' <span class="muted" style="font-size:14px">+' + (xp + bonus) + ' XP</span>', (r.tip ? '<p>' + rich(r.tip) + '</p>' : '') + (q.why || (q.sol && RUN.L > 1) ? '<details><summary style="cursor:pointer;font-weight:800">See why</summary>' + solutionHtml(q) + '</details>' : ''), 'happy');
+    beep('good'); if (perfect && RUN.streak % 5 === 0) confetti(60);
+    if (q.t === 'mcq' || q.t === 'yn') markOpts(q);
+    return endQ(q, perfect ? 1 : 0.5);
+  }
+  // wrong
+  C.tries++; RUN.streak = 0; beep('bad');
+  if (C.tries >= MAX_TRIES(q)) return reveal(q, false, r.msg);
+  const left = MAX_TRIES(q) - C.tries;
+  fbBox('bad', 'Not quite', '<p>' + rich(r.msg || R.pick(['Check your working and try again.', 'Have another go. What does the question really ask?', 'Close? Check each step.'])) + '</p><p class="note">' + left + ' more ' + (left === 1 ? 'try' : 'tries') + '. A hint might help.</p>', 'think');
+  if (q.t === 'mcq') { const b = $('.opt.sel'); if (b) { b.classList.add('wrong'); b.disabled = true; } C.pick = null; }
+}
+function markOpts(q){ $$('.opt').forEach(b => { const i = +b.dataset.i; const right = q.t === 'yn' ? (i === 1) === q.a : i === q.a; if (right) b.classList.add('right'); else if (b.classList.contains('sel')) b.classList.add('wrong'); }); }
+function reveal(q, gaveUp, msg){
+  const C = RUN.cur; if (C.done) return; C.done = true; RUN.streak = 0;
+  if (q.t === 'mcq' || q.t === 'yn') markOpts(q);
+  if (q.t === 'cmp') $('#slot').textContent = q._ans;
+  if (q.t === 'line') { $('#fig').innerHTML = numberLine(q.max, q.den, q._ans.mul(q.den).n, false); }
+  if (q.t === 'shade') { const tot = q.fig.k === 'pie' ? q.fig.n : q.fig.r * q.fig.c; const k = q._ans.mul(tot).n; $('#fig').innerHTML = svgFig(q.fig, { sel:new Set([...Array(k).keys()]) }); }
+  fbBox('bad', gaveUp ? 'Here is how it works' : 'Let\'s see how it works', (msg ? '<p>' + rich(msg) + '</p>' : '') + '<p><b>Answer:</b> ' + rich(q._ans && q._ans.tok ? q._ans.tok() : q.t === 'mcq' ? q.opts[q.a] : q.t === 'yn' ? (q.a ? 'Yes' : 'No') : q.t === 'cmp' ? esc(q._ans) : q.t === 'order' ? q._ans.map(s => '{' + s + '}').join(', ') : 'see below') + '</p>' + solutionHtml(q) + '<p class="note">This one will come back later so you can try it again.</p>', 'sad');
+  endQ(q, 0);
+}
+function endQ(q, ok){
+  const C = RUN.cur; const ms = Date.now() - C.t0;
+  RUN.results[RUN.i] = { ok, hints:C.hints, tries:C.tries };
+  // stats
+  const t = today(); t.att++; if (ok > 0) t.cor++; if (ok === 1) t.first++; t.hints += C.hints; touchSession(t); const ss = t.sessions[t.sessions.length - 1]; ss.att++; if (ok > 0) ss.cor++;
+  const wk = q.review || RUN.w || 0; t.worlds[wk] = t.worlds[wk] || { att:0, cor:0 }; t.worlds[wk].att++; if (ok > 0) t.worlds[wk].cor++;
+  const sk = q.sk || 'other'; t.skills[sk] = t.skills[sk] || { att:0, cor:0 }; t.skills[sk].att++; if (ok > 0) t.skills[sk].cor++;
+  S.skills[sk] = S.skills[sk] || { a:0, c:0 }; S.skills[sk].a++; if (ok === 1) S.skills[sk].c++; else if (ok > 0) S.skills[sk].c += 0.5;
+  t.attempts.push({ t:Date.now(), w:wk, l:RUN.L, id:q.id, sk, ok, h:C.hints, n:C.tries, nu:C.nudged ? 1 : 0, ms, g:String(C.given).slice(0, 60), x:String(expectedText(q)).slice(0, 60), q:plain(q.q).slice(0, 140), bk:q.gen ? 0 : 1 });
+  if (t.attempts.length > 600) t.attempts.splice(0, t.attempts.length - 600);
+  if (ok === 0 && q.gen) { S.retry = S.retry || []; const spec = {}; Object.keys(q).forEach(k => { if (k[0] !== '_' && !['sol','id','retried','again','review'].includes(k)) spec[k] = q[k]; }); spec.t = q.t; if (q.retried) S.retry = S.retry.filter(r => r !== q.retried); S.retry.push({ w: q.review || RUN.w || 1, spec }); if (S.retry.length > 30) S.retry.shift(); }
+  if (ok > 0 && q.retried) { S.retry = (S.retry || []).filter(r => r !== q.retried); }
+  if (!q.gen && RUN.w) { const seen = W(RUN.w).L1.seen; if (ok > 0 || seen[q.id] !== 1) seen[q.id] = ok > 0 ? 1 : 0; }
+  LOG_DIRTY = true; saveLocal(true); scheduleLogSync();
+  $('#check').hidden = true; $('#hint').disabled = true; $('#show').hidden = true; $('#next').hidden = false; $('#next').textContent = RUN.i === RUN.qs.length - 1 ? 'See results' : 'Next'; $('#next').focus();
+  $$('.card input').forEach(i => i.disabled = true);
+  $$('.dots i')[RUN.i].className = ok === 1 ? 'ok' : ok > 0 ? 'half' : 'no';
+}
+function nextQ(){ if (RUN.i >= RUN.qs.length - 1) return finishRound(false); RUN.i++; newQ(); renderPlay($('#app')); }
+function finishRound(early){
+  const score = RUN.results.reduce((a, r) => a + (r ? r.ok : 0), 0); const n = RUN.results.filter(Boolean).length;
+  const t = today(); t.rounds++; t.xp = (t.xp || 0) + (S.xp - RUN.xpStart);
+  if (!early && RUN.w) { const lv = W(RUN.w)['L' + RUN.L]; lv.rounds++; if (score > lv.best) lv.best = score;
+    if (score >= 7 && RUN.L === 3) { award('twist'); if (RUN.w === 12) award('crown'); }
+    if (RUN.L === 1 && bookFor(RUN.w).every(q => W(RUN.w).L1.seen[q.id] === 1)) award('book');
+    if ([...Array(11)].filter((_, i) => W(i + 1).L2.best >= 7).length >= 3) award('hopper'); }
+  if (!early && RUN.hintsTotal === 0 && n === 10) award('nohint');
+  if (!early && RUN.results.every(r => r && r.ok === 1)) award('perfect');
+  const goalDays = Object.values(S.days).filter(d => d.ms >= S.settings.goalMin * 60000).length; if (goalDays >= 3) award('goal3');
+  RUN.score = score; RUN.answered = n; RUN.early = early; LOG_DIRTY = true; saveLocal(true); scheduleLogSync(true); scheduleProgressSync(true);
+  maybeTelegramRound();
+  go('results');
+}
+function renderResults(app){
+  const s = RUN.score, n = RUN.answered; const st = RUN.w ? starsFor(s) : 0; const pass = s >= 7;
+  const firstTry = RUN.results.filter(r => r && r.ok === 1).length;
+  let html = '<div class="res"><div class="mascot">' + mascot(pass || !RUN.w ? 'wow' : 'think', 96) + '</div><h2 style="font-size:30px;margin:6px 0">' + (RUN.early ? 'Saved your progress' : pass ? R.pick(['Level passed!', 'Island conquered!', 'Fantastic round!']) : 'Good practice!') + '</h2>'
+    + (RUN.w && !RUN.early ? '<div class="bigstars">' + starsHtml(st) + '</div>' : '')
+    + '<div class="statrow"><div class="stat"><b class="tnum">' + (Math.round(s * 10) / 10) + '/' + n + '</b><span>Score</span></div><div class="stat"><b class="tnum">' + firstTry + '</b><span>First try</span></div><div class="stat"><b class="tnum">+' + (S.xp - RUN.xpStart) + '</b><span>XP</span></div></div>';
+  if (RUN.newBadges.length) html += '<div><p style="font-weight:800">New badge' + (RUN.newBadges.length > 1 ? 's' : '') + '!</p>' + RUN.newBadges.map(b => '<span class="badge">' + ICON.star(true) + BADGES[b][0] + '</span>').join('') + '</div>';
+  if (RUN.w && !pass && !RUN.early) html += '<p class="muted">You need 7 points to pass. Questions you got wrong come back, so each round gets easier.</p>';
+  html += '<div class="actions" style="justify-content:center;margin-top:16px"><button class="btn ghost" id="home">Back to map</button>' + (RUN.w || RUN.w === 0 ? '<button class="btn coral" id="again">' + (pass && RUN.w && RUN.L < 3 && levelUnlocked(RUN.w, RUN.L + 1) ? 'Next level' : 'Play again') + '</button>' : '') + '</div></div>';
+  app.innerHTML = html;
+  if (pass && !RUN.early) { confetti(120); beep('win'); }
+  $('#home').onclick = () => go('home');
+  const ag = $('#again'); if (ag) ag.onclick = () => { if (pass && RUN.w && RUN.L < 3 && levelUnlocked(RUN.w, RUN.L + 1)) startRound(RUN.w, RUN.L + 1); else startRound(RUN.w, RUN.L); };
+}
+
+// ---------------- Telegram (works when the file is opened locally) ----------------
+async function tgSend(text){
+  const { tgToken, tgChat } = S.settings; if (!tgToken || !tgChat) return false;
+  try { const r = await fetch('https://api.telegram.org/bot' + encodeURIComponent(tgToken).replace(/%3A/g, ':') + '/sendMessage', { method:'POST', headers:{ 'Content-Type':'application/json' }, body:JSON.stringify({ chat_id:tgChat, text, parse_mode:'HTML' }) }); return r.ok; } catch (_) { return false; }
+}
+function maybeTelegramRound(){
+  if (!S.settings.tgToken) return; const t = today(); const s = RUN.score, n = RUN.answered;
+  tgSend('<b>' + esc(S.player.name) + ' finished a round</b>\n' + esc(levelLabel()) + '\nScore ' + (Math.round(s * 10) / 10) + '/' + n + ' · first try ' + RUN.results.filter(r => r && r.ok === 1).length + ' · hints ' + RUN.hintsTotal + '\nToday so far: ' + t.att + ' questions, ' + (t.att ? Math.round(100 * t.cor / t.att) : 0) + '% correct, ' + mins(t.ms) + ' active min.');
+}
+async function maybeTelegramDaily(){
+  if (!S.settings.tgToken) return; const y = dayKey(Date.now() - 86400000); if (S.settings.tgLastDaily === y) return; const d = S.days[y];
+  const msg = d && d.att ? dailyText(d) : '<b>' + esc(S.player.name) + '</b> did not practise fractions on ' + y + '.';
+  if (await tgSend(msg)) { S.settings.tgLastDaily = y; saveLocal(true); }
+}
+function dailyText(d){
+  const weak = Object.entries(d.skills || {}).filter(([, v]) => v.att >= 3).sort((a, b) => a[1].cor / a[1].att - b[1].cor / b[1].att).slice(0, 2).map(([k, v]) => SKILLNAME[k] + ' ' + Math.round(100 * v.cor / v.att) + '%');
+  return '<b>Fraction Quest daily report for ' + esc(S.player.name) + ' (' + d.date + ')</b>\nActive time: ' + mins(d.ms) + ' min\nQuestions: ' + d.att + ' (' + Math.round(100 * d.cor / d.att) + '% correct, ' + d.first + ' first try)\nHints used: ' + d.hints + (weak.length ? '\nNeeds work: ' + weak.join(', ') : '');
+}
+
+// ---------------- Parent area ----------------
+const SKILLNAME = { meaning:'Meaning of a fraction', collection:'Fraction of a collection', numline:'Number line', proper:'Proper and improper', mixed:'Mixed fractions', equiv:'Equivalent fractions', simplest:'Simplest form', compare:'Comparing', order:'Ordering', addlike:'Adding like fractions', addunlike:'Adding unlike fractions', sub:'Subtraction', mulwhole:'Fraction × whole number', mulfrac:'Fraction × fraction', div:'Division', bodmas:'BODMAS', word:'Word problems', other:'Other' };
+function parentGate(){
+  const m = document.createElement('div'); m.className = 'modal'; const hasPin = !!S.settings.pin;
+  m.innerHTML = '<div class="sheet" style="max-width:380px"><h2>Parent area</h2><p class="muted">' + (hasPin ? 'Enter your 4 digit PIN.' : 'Create a 4 digit PIN so only you can open the reports.') + '</p><div class="field"><label for="pin">PIN</label><input id="pin" inputmode="numeric" maxlength="4" type="password" autocomplete="off"></div><p id="pinerr" class="note"></p><div class="ctrl"><button class="btn ghost" id="pc">Cancel</button><button class="btn" id="po">' + (hasPin ? 'Open' : 'Save PIN') + '</button></div></div>';
+  document.body.appendChild(m); const inp = $('#pin', m); setTimeout(() => inp.focus(), 50);
+  const ok = () => { const v = inp.value.trim(); if (!/^\d{4}$/.test(v)) { $('#pinerr', m).textContent = 'Use exactly 4 digits.'; return; } if (!hasPin) { S.settings.pin = v; saveLocal(true); } else if (v !== S.settings.pin) { $('#pinerr', m).textContent = 'That PIN is not right.'; inp.value = ''; return; } m.remove(); go('parent', { tab:'report' }); };
+  $('#po', m).onclick = ok; $('#pc', m).onclick = () => m.remove(); inp.addEventListener('keydown', e => { if (e.key === 'Enter') ok(); });
+}
+async function loadLogs(){
+  const local = Object.values(S.days);
+  if (!DB) return local;
+  try { const qs = await DB.collection('log').orderBy('date', 'desc').limit(30).get(); const remote = qs.docs.map(d => d.data()); const map = {}; local.forEach(d => map[d.date] = d); remote.forEach(d => { if (!map[d.date] || (d.att || 0) > (map[d.date].att || 0)) map[d.date] = d; }); return Object.values(map); } catch (_) { return local; }
+}
+async function renderParent(app){
+  app.innerHTML = '<p class="muted">Loading report…</p>';
+  const logs = (await loadLogs()).sort((a, b) => a.date < b.date ? 1 : -1);
+  const tk = dayKey(); const t = logs.find(d => d.date === tk) || { att:0, cor:0, first:0, hints:0, ms:0, sessions:[], attempts:[], skills:{}, worlds:{} };
+  const pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '–';
+  let html = '<div class="dash"><div class="top"><button class="iconbtn" id="pback" aria-label="Back">' + ICON.back + '</button><div class="brand"><div><h1>Parent report</h1><small>' + esc(S.player.name) + ' · ' + (SYNC.mode === 'cloud' ? 'synced online' : MODE.kind === 'demo' ? 'demo, this browser only' : 'saved on this device only') + '</small></div></div><button class="btn ghost small" id="tabR">Report</button><button class="btn ghost small" id="tabS">Settings</button></div>';
+  if (VIEW.tab === 'settings') { app.innerHTML = html + settingsHtml() + '</div>'; wireParent(); wireSettings(); return; }
+  const last = logs.find(d => d.att > 0); const lastAt = last && last.attempts && last.attempts.length ? last.attempts[last.attempts.length - 1].t : null;
+  html += '<div class="tiles"><div class="tile"><span>Active today</span><b>' + mins(t.ms) + ' min</b><small>Goal ' + S.settings.goalMin + ' min</small></div><div class="tile"><span>Questions today</span><b>' + t.att + '</b><small>' + t.first + ' right on first try</small></div><div class="tile"><span>Accuracy today</span><b>' + pct(t.cor, t.att) + '</b><small>' + t.hints + ' hints used</small></div><div class="tile"><span>Last practice</span><b style="font-size:20px">' + (lastAt ? (dayKey(lastAt) === tk ? 'Today ' : last.date.slice(5) + ' ') + fmtTime(lastAt) : 'Never') + '</b><small>Day streak ' + dayStreak() + '</small></div></div>';
+  // 14 day bars
+  const days = [...Array(14)].map((_, i) => dayKey(Date.now() - (13 - i) * 86400000)); const by = {}; logs.forEach(d => by[d.date] = d); const maxMin = Math.max(S.settings.goalMin, ...days.map(k => by[k] ? mins(by[k].ms) : 0));
+  html += '<div class="panel"><h3>Last 14 days</h3><div class="bars">' + days.map(k => { const d = by[k]; const m = d ? mins(d.ms) : 0; return '<div class="col" title="' + k + ': ' + m + ' min, ' + (d ? d.att : 0) + ' questions, ' + (d ? pct(d.cor, d.att) : '–') + ' correct"><span class="lbl tnum">' + (m || '') + '</span><div class="bar' + (m ? '' : ' zero') + '" style="height:' + (m ? Math.max(4, 100 * m / maxMin) : 0) + '%"></div></div>'; }).join('') + '</div><div style="display:flex;gap:6px">' + days.map(k => '<div class="bars lbl" style="flex:1;text-align:center;height:auto;border:none;font-size:10px;color:var(--ink2)">' + k.slice(8) + '</div>').join('') + '</div><p class="note">Bars show active minutes. Hover a bar for questions and accuracy.</p></div>';
+  // daily table
+  html += '<div class="panel"><h3>Day by day</h3><div class="scroll"><table class="tbl tnum"><thead><tr><th>Date</th><th>Minutes</th><th>Questions</th><th>Correct</th><th>First try</th><th>Hints</th><th>Sessions</th></tr></thead><tbody>' + logs.filter(d => d.att || d.ms).slice(0, 14).map(d => '<tr><td>' + d.date + '</td><td>' + mins(d.ms) + '</td><td>' + d.att + '</td><td>' + pct(d.cor, d.att) + '</td><td>' + pct(d.first, d.att) + '</td><td>' + d.hints + '</td><td>' + (d.sessions || []).map(s => fmtTime(s.s) + '–' + fmtTime(s.e)).join(', ') + '</td></tr>').join('') + '</tbody></table></div></div>';
+  // islands
+  html += '<div class="panel"><h3>Islands</h3><div class="scroll"><table class="tbl"><thead><tr><th>Island</th><th>Textbook solved</th><th>Warm-up</th><th>Explorer</th><th>Twist</th></tr></thead><tbody>';
+  for (let w = 1; w <= 12; w++) { const ws = W(w); const bn = bookFor(w).length; const sv = Object.values(ws.L1.seen).filter(v => v === 1).length; const cell = L => ws['L' + L].rounds ? starsHtml(starsFor(ws['L' + L].best)) + ' <span class="note tnum">best ' + ws['L' + L].best + '</span>' : '<span class="note">not tried</span>'; html += '<tr><td><b>' + (w === 12 ? 'Revision' : WORLDS[w].ex) + '</b> ' + WORLDS[w].topic + '</td><td class="tnum">' + sv + ' / ' + bn + '</td><td>' + cell(1) + '</td><td>' + cell(2) + '</td><td>' + cell(3) + '</td></tr>'; }
+  html += '</tbody></table></div></div>';
+  // skills
+  const sks = Object.entries(S.skills).filter(([, v]) => v.a > 0).sort((a, b) => a[1].c / a[1].a - b[1].c / b[1].a);
+  html += '<div class="panel"><h3>Skills, weakest first</h3>' + (sks.length ? '<div class="scroll"><table class="tbl tnum"><thead><tr><th>Skill</th><th>Attempts</th><th>Score</th><th></th></tr></thead><tbody>' + sks.map(([k, v]) => { const p = Math.round(100 * v.c / v.a); return '<tr><td>' + (SKILLNAME[k] || k) + '</td><td>' + v.a + '</td><td><span class="pill ' + (p >= 80 ? 'g' : p >= 55 ? 'm' : 'b') + '">' + p + '%</span></td><td style="width:40%"><div class="meter"><i style="width:' + p + '%"></i></div></td></tr>'; }).join('') + '</tbody></table></div>' : '<p class="note">No questions answered yet.</p>') + '<p class="note">Score counts a first-try answer as 1 and an answer fixed after a hint or retry as half.</p></div>';
+  // mistakes
+  const mistakes = logs.flatMap(d => d.attempts || []).filter(a => a.ok < 1).sort((a, b) => b.t - a.t).slice(0, 30);
+  html += '<div class="panel"><h3>Recent mistakes and near misses</h3>' + (mistakes.length ? '<div class="scroll"><table class="tbl"><thead><tr><th>When</th><th>Question</th><th>Her answer</th><th>Correct</th><th>Result</th></tr></thead><tbody>' + mistakes.map(a => '<tr><td class="tnum">' + dayKey(a.t).slice(5) + ' ' + fmtTime(a.t) + '</td><td>' + esc(a.q) + (a.bk ? ' <span class="pill m">book</span>' : '') + '</td><td>' + esc(a.g || '–') + '</td><td>' + esc(a.x) + '</td><td>' + (a.ok > 0 ? '<span class="pill m">fixed' + (a.h ? ' with hint' : '') + (a.nu ? ', needed simplifying' : '') + '</span>' : '<span class="pill b">wrong</span>') + '</td></tr>').join('') + '</tbody></table></div>' : '<p class="note">No mistakes yet. Nice.</p>') + '</div>';
+  // badges
+  html += '<div class="panel"><h3>Badges</h3>' + (Object.keys(S.badges).length ? Object.keys(S.badges).map(b => '<span class="badge">' + ICON.star(true) + BADGES[b][0] + '</span>').join('') : '<p class="note">None yet.</p>') + '</div></div>';
+  app.innerHTML = html; wireParent();
+}
+function wireParent(){ $('#pback').onclick = () => go('home'); $('#tabR').onclick = () => go('parent', { tab:'report' }); $('#tabS').onclick = () => go('parent', { tab:'settings' }); }
+function settingsHtml(){
+  const st = S.settings;
+  return '<div class="panel"><h3>Daily goal</h3><div class="field"><label for="goal">Active minutes per day</label><input id="goal" type="number" min="10" max="180" value="' + st.goalMin + '"></div></div>'
+    + '<div class="panel"><h3>PIN</h3><div class="field"><label for="npin">New 4 digit PIN</label><input id="npin" inputmode="numeric" maxlength="4" type="password" autocomplete="off"></div></div>'
+    + '<div class="panel"><h3>Levels</h3><label style="display:flex;gap:8px;align-items:center;font-weight:700"><input type="checkbox" id="unl" ' + (st.unlockAll ? 'checked' : '') + '> Unlock every island and level</label><p class="note">Normally an island opens after Explorer on the island before it is passed.</p><label style="display:flex;gap:8px;align-items:center;font-weight:700;margin-top:8px"><input type="checkbox" id="snd" ' + (st.sound ? 'checked' : '') + '> Sound effects</label></div>'
+    + (MODE.kind === 'web' ? '<div class="panel"><h3>Evening report</h3><p class="note">The server sends a report every evening between 8:30 and 9:30 PM.' + (MODE.health ? ' Email: ' + (MODE.health.email ? 'on' : 'not set up') + '. Telegram: ' + (MODE.health.telegram ? 'on' : 'not set up') + '.' : '') + '</p><button class="btn ghost small" id="reptest">Send today\'s report now</button><pre id="repres" class="note" style="white-space:pre-wrap;margin-top:10px"></pre><p class="note">On a shared device, you can make it forget the family code: <button class="btn ghost small" id="forget">Forget family code</button></p></div>' : '')
+    + (MODE.kind !== 'file' ? '' : '<div class="panel"><h3>Telegram alerts</h3><p class="note">Works when the game is opened as a file on this computer. Inside Claude, use the daily email instead. Create a bot with @BotFather, paste its token, then send your bot any message and paste your chat id (from @userinfobot).</p><div class="field"><label for="tgt">Bot token</label><input id="tgt" value="' + esc(st.tgToken) + '" autocomplete="off"></div><div class="field"><label for="tgc">Chat id</label><input id="tgc" value="' + esc(st.tgChat) + '" autocomplete="off"></div><button class="btn ghost small" id="tgtest">Send a test message</button> <span id="tgres" class="note"></span></div>')
+    + '<div class="panel"><h3>Reset</h3><p class="note">Type RESET and press the button to wipe all progress on this device' + (DB ? ' and in the cloud' : '') + '.</p><div class="field"><input id="rst" placeholder="RESET" autocomplete="off"></div><button class="btn ghost small" id="rstb">Wipe progress</button></div>'
+    + '<div class="ctrl"><span class="note">Sync: ' + SYNC.mode + (SYNC.last ? ', last saved ' + fmtTime(SYNC.last) : '') + (SYNC.err ? ', last error ' + esc(SYNC.err) : '') + '</span><button class="btn" id="ssave">Save settings</button></div>';
+}
+function wireSettings(){
+  $('#ssave').onclick = () => { const st = S.settings; const g = +$('#goal').value; if (g >= 10 && g <= 180) st.goalMin = g; const np = $('#npin').value.trim(); if (np) { if (!/^\d{4}$/.test(np)) return toast('PIN must be 4 digits'); st.pin = np; } st.unlockAll = $('#unl').checked; st.sound = $('#snd').checked; if ($('#tgt')) { st.tgToken = $('#tgt').value.trim(); st.tgChat = $('#tgc').value.trim(); } saveLocal(true); toast('Settings saved'); };
+  const rt = $('#reptest'); if (rt) rt.onclick = async () => { $('#repres').textContent = 'Sending…'; try { const j = await DB.call('POST', '/api/report?test=1&date=' + dayKey(), {}); $('#repres').textContent = (j.sent.email || j.sent.telegram ? 'Sent by ' + [j.sent.email && 'email', j.sent.telegram && 'Telegram'].filter(Boolean).join(' and ') + '.' : (j.note || 'Not sent: ' + (j.errors || []).join(', '))) + '\n\n' + j.text; } catch (e) { $('#repres').textContent = 'Could not send: ' + (e.message || e.code); } };
+  const fg = $('#forget'); if (fg) fg.onclick = () => { lsSet('fq.familyCode', null); location.reload(); };
+  const tt = $('#tgtest'); if (tt) tt.onclick = async () => { S.settings.tgToken = $('#tgt').value.trim(); S.settings.tgChat = $('#tgc').value.trim(); saveLocal(); const ok = await tgSend('Fraction Quest is connected. You will get round updates for ' + S.player.name + '.'); $('#tgres').textContent = ok ? 'Sent. Check Telegram.' : 'Could not send. Check the token and chat id, and open the game as a local file.'; };
+  $('#rstb').onclick = async () => { if ($('#rst').value !== 'RESET') return toast('Type RESET first'); const keep = S.settings; S = DEFAULT_STATE(); S.settings = keep; PLAYER = S.player; saveLocal(true); if (DB) { try { await DB.doc('progress/main').set(progressDoc()); } catch (_) {} } toast('Progress wiped'); go('home'); };
+}
+
+// ---------------- Boot ----------------
+(async () => {
+  await detectMode();
+  loadLocal();
+  if (MODE.kind === 'web' && !familyCode()) return renderGate($('#app'));
+  if (MODE.kind === 'web' || (!S.player.name && MODE.kind === 'artifact')) { await Promise.race([initDb(), new Promise(r => setTimeout(r, 5000))]); if (SYNC.err === 'unauthorized') { lsSet('fq.familyCode', null); return renderGate($('#app'), 'That family code no longer works. Enter it again.'); } route(); }
+  else { route(); initDb(); }
+})();
+
+function renderGate(app, msg){
+  app.innerHTML = '<div class="play" style="max-width:520px;margin-top:6vh"><div class="card" style="text-align:center"><div class="mascot">' + mascot('wow', 96) + '</div><h1 style="font-size:32px;margin:8px 0">Fraction Quest</h1>'
+    + '<p class="muted">A fractions practice game for Class 6. Twelve islands, one for each part of the chapter: textbook warm-ups, fresh questions, and twists that make you think.</p>'
+    + '<div class="field" style="text-align:left"><label for="fcode">Family code</label><input id="fcode" type="password" autocomplete="current-password" placeholder="Enter your family code"></div><p class="note" id="gerr" style="min-height:1.2em">' + esc(msg || '') + '</p>'
+    + '<button class="btn coral" id="genter" style="width:100%">Enter</button>'
+    + '<div style="margin:18px 0 6px;color:var(--ink2);font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.8px">or</div>'
+    + '<button class="btn ghost" id="gdemo" style="width:100%">Try the demo</button><p class="note" style="margin-top:10px">The demo works fully, with progress kept only in your browser.</p></div>'
+    + '<p class="note" style="text-align:center;margin-top:14px">Built by <a href="https://suniljadhav.in" target="_blank" rel="noopener" style="color:inherit">Sunil Jadhav</a> with Claude.</p></div>';
+  const enter = async () => {
+    const code = $('#fcode').value.trim(); if (!code) return $('#fcode').focus();
+    $('#gerr').textContent = 'Checking…'; lsSet('fq.familyCode', code);
+    try { await remoteDb().doc('progress/main').get(); location.reload(); }
+    catch (e) { lsSet('fq.familyCode', null); $('#gerr').textContent = e.code === 'unauthorized' ? 'That code is not right. Check with your parent.' : e.code === 'resource_exhausted' ? 'Too many wrong tries. Wait an hour and try again.' : 'Could not reach the server. Check the internet connection.'; }
+  };
+  $('#genter').onclick = enter; $('#fcode').addEventListener('keydown', e => { if (e.key === 'Enter') enter(); });
+  $('#gdemo').onclick = () => { ssSet('fq.demo', '1'); location.reload(); };
+}
+setTimeout(() => { if (MODE.kind === 'file') maybeTelegramDaily(); }, 4000);
+
+</script>
