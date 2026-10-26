@@ -66,7 +66,8 @@ module.exports = async function webE2E() {
     ok('demo play never touches family data', after.logs[0].att === 5 && p2.data.player.name === 'Meera', 'att ' + after.logs[0].att);
     // 5. report endpoint from the parent settings button
     await phone.click('#home'); await phone.waitForSelector('#parentBtn');
-    await phone.click('#parentBtn'); await phone.fill('#pin', '2468'); await phone.click('#po'); await phone.waitForSelector('.tiles');
+    await phone.click('#parentBtn'); await phone.fill('#pin', '2468'); await phone.click('#po');
+    await phone.waitForSelector('.tiles');
     await phone.click('#tabS'); await phone.click('#reptest'); await phone.waitForFunction(() => /Meera practised fractions/.test(document.querySelector('#repres').textContent));
     const repText = await phone.innerText('#repres');
     ok('test report button returns the report', /5 questions/.test(repText) && /No delivery channel/.test(repText), repText.split('\n')[0]);
@@ -84,7 +85,36 @@ module.exports = async function webE2E() {
     const fresh = watch(await (await b.newContext()).newPage());
     await fresh.goto(base + '/#demo'); await fresh.waitForSelector('#obParent');
     await fresh.click('#obParent'); ok('name screen has a parent link that opens the PIN box', !!(await fresh.$('#pin')));
-    // 7. forgotten code: a device with a stale code is sent back to the gate
+    // 7. report Refresh picks up play from another device without reopening
+    await parentDev.click('#prefresh'); await parentDev.waitForSelector('.tiles');
+    const before = await parentDev.innerText('.tiles');
+    await laptop.click('.lv[data-w="1"][data-l="1"]'); await laptop.waitForSelector('#check');
+    await laptop.evaluate(answerCorrectly); await laptop.click('#check'); await laptop.click('#next'); await laptop.click('#quit'); await laptop.waitForSelector('#home');
+    await laptop.waitForTimeout(4500);
+    await parentDev.click('#prefresh'); await parentDev.waitForSelector('.tiles');
+    const afterTiles = await parentDev.innerText('.tiles');
+    ok('Refresh shows her new question without reopening the report', /QUESTIONS TODAY\s*5/i.test(before) && /QUESTIONS TODAY\s*6/i.test(afterTiles), afterTiles.replace(/\n/g, ' ').slice(0, 60));
+    ok('report says the data is live from the server', /Live from the server/.test(await parentDev.innerText('.dash')));
+    // 8. a stale parent device saving settings does not overwrite her newer progress
+    const xpServer = (await api('/api/doc?path=progress/main')).data.xp;
+    await parentDev.evaluate(() => { S.xp = 1; S.updatedAt = 1; }); // simulate a copy loaded long ago
+    await parentDev.click('#tabS'); await parentDev.waitForSelector('#ssave'); await parentDev.fill('#goal', '50'); await parentDev.click('#ssave'); await parentDev.waitForTimeout(5000);
+    const progAfter = (await api('/api/doc?path=progress/main')).data;
+    ok('stale parent device keeps her XP when saving a setting', progAfter.xp === xpServer && progAfter.settings.goalMin === 50, 'xp ' + progAfter.xp + ' vs ' + xpServer + ', goal ' + progAfter.settings.goalMin);
+    // 9. when saving fails the map says so, then it retries and recovers
+    let block = true;
+    await laptop.route(u => decodeURIComponent(String(u)).includes('/api/doc?path=log/'), route => block && route.request().method() === 'PUT' ? route.fulfill({ status: 500, body: '{"error":"down"}' }) : route.continue());
+    await laptop.click('#home').catch(() => {}); await laptop.evaluate(() => go('home'));
+    await laptop.click('.lv[data-w="1"][data-l="1"]'); await laptop.waitForSelector('#check');
+    await laptop.evaluate(answerCorrectly); await laptop.click('#check'); await laptop.click('#next'); await laptop.click('#quit');
+    await laptop.waitForFunction(() => /Not saved online yet/.test(document.body.innerText), null, { timeout: 15000 });
+    ok('results screen says when saving failed', true);
+    block = false;
+    ok('status stays "Not saved" while her questions are not on the server', /Not saved online yet/.test(await laptop.evaluate(() => document.body.innerText)));
+    await laptop.waitForFunction(() => /Saved online/.test(document.body.innerText), null, { timeout: 40000 });
+    const recovered = (await api('/api/logs')).logs[0].att;
+    ok('failed save retries by itself and reaches the server', recovered === 7, 'att ' + recovered);
+    // 10. forgotten code: a device with a stale code is sent back to the gate
     const stale = watch(await (await b.newContext()).newPage());
     await stale.goto(base + '/'); await stale.evaluate(() => localStorage.setItem('fq.familyCode', 'old-code')); await stale.reload();
     await stale.waitForSelector('#fcode'); ok('stale code goes back to the gate', /no longer works/.test(await stale.innerText('#gerr')));

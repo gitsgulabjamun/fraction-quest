@@ -1156,6 +1156,48 @@ function saveLocal(push){ if (push) { DIRTY = true; S.updatedAt = Date.now(); } 
 function W(w){ return S.worlds[w] = S.worlds[w] || { L1:{ best:0, rounds:0, seen:{} }, L2:{ best:0, rounds:0 }, L3:{ best:0, rounds:0 } }; }
 function today(){ const k = dayKey(); return S.days[k] = S.days[k] || { date:k, ms:0, att:0, cor:0, first:0, hints:0, xp:0, rounds:0, worlds:{}, skills:{}, sessions:[], attempts:[] }; }
 
+// ---------------- Merging copies from several devices ----------------
+// Every save fetches the server copy and merges it with this device's copy, so no device can wipe another's work.
+const DEVICE = (() => { let d = lsGet('fq.device'); if (!d) { d = 'd' + Math.random().toString(36).slice(2, 10); lsSet('fq.device', d); } return d; })();
+const clone = o => JSON.parse(JSON.stringify(o || {}));
+function mergeProgress(a, b){
+  if (!b) return clone(a); if (!a) return clone(b);
+  const [newer, older] = (a.updatedAt || 0) >= (b.updatedAt || 0) ? [a, b] : [b, a];
+  const out = clone(newer); const o = clone(older);
+  out.player = Object.assign({}, o.player, newer.player); if (!out.player.name) out.player.name = (o.player || {}).name || '';
+  out.settings = Object.assign({}, o.settings, newer.settings); if (!out.settings.pin) out.settings.pin = (o.settings || {}).pin || '';
+  out.xp = Math.max(a.xp || 0, b.xp || 0); out.simpl = Math.max(a.simpl || 0, b.simpl || 0); out.streakBest = Math.max(a.streakBest || 0, b.streakBest || 0);
+  out.badges = Object.assign({}, o.badges, newer.badges); for (const k in (o.badges || {})) out.badges[k] = Math.min(o.badges[k], out.badges[k] || Infinity);
+  out.worlds = clone(newer.worlds);
+  for (const w in (o.worlds || {})) { const ow = o.worlds[w], nw = out.worlds[w] = out.worlds[w] || clone(ow);
+    for (const L of ['L1', 'L2', 'L3']) { if (!ow[L]) continue; nw[L] = nw[L] || { best:0, rounds:0 }; nw[L].best = Math.max(nw[L].best || 0, ow[L].best || 0); nw[L].rounds = Math.max(nw[L].rounds || 0, ow[L].rounds || 0); }
+    if (ow.L1 && ow.L1.seen) { nw.L1.seen = nw.L1.seen || {}; for (const id in ow.L1.seen) if (ow.L1.seen[id] === 1 || nw.L1.seen[id] === undefined) nw.L1.seen[id] = Math.max(ow.L1.seen[id], nw.L1.seen[id] || 0); } }
+  out.skills = clone(newer.skills); for (const k in (o.skills || {})) if (!out.skills[k] || o.skills[k].a > out.skills[k].a) out.skills[k] = clone(o.skills[k]);
+  const seenRetry = new Set((out.retry || []).map(r => JSON.stringify(r.spec))); (o.retry || []).forEach(r => { if (!seenRetry.has(JSON.stringify(r.spec))) (out.retry = out.retry || []).push(r); }); if (out.retry && out.retry.length > 30) out.retry = out.retry.slice(-30);
+  out.updatedAt = Math.max(a.updatedAt || 0, b.updatedAt || 0); delete out.days;
+  return out;
+}
+function mergeDay(a, b){
+  if (!b) return clone(a); if (!a) return clone(b);
+  const out = clone(a); const key = x => x.t + '|' + x.id; const map = new Map();
+  [...(b.attempts || []), ...(a.attempts || [])].forEach(x => map.set(key(x), x));
+  out.attempts = [...map.values()].sort((x, y) => x.t - y.t).slice(-600);
+  const recount = { att:0, cor:0, first:0, hints:0, worlds:{}, skills:{} };
+  out.attempts.forEach(x => { recount.att++; if (x.ok > 0) recount.cor++; if (x.ok === 1) recount.first++; recount.hints += x.h || 0;
+    const w = recount.worlds[x.w] = recount.worlds[x.w] || { att:0, cor:0 }; w.att++; if (x.ok > 0) w.cor++;
+    const k = recount.skills[x.sk] = recount.skills[x.sk] || { att:0, cor:0 }; k.att++; if (x.ok > 0) k.cor++; });
+  const capped = (a.att || 0) > out.attempts.length || (b.att || 0) > out.attempts.length;
+  if (!capped) Object.assign(out, recount); else { out.att = Math.max(a.att || 0, b.att || 0); out.cor = Math.max(a.cor || 0, b.cor || 0); out.first = Math.max(a.first || 0, b.first || 0); out.hints = Math.max(a.hints || 0, b.hints || 0); }
+  const byOf = d => d.msBy ? d.msBy : (d.ms ? { legacy:d.ms } : {});
+  const ab = byOf(a), bb = byOf(b); out.msBy = Object.assign({}, bb, ab); for (const d in bb) out.msBy[d] = Math.max(bb[d], out.msBy[d] || 0);
+  out.ms = Object.values(out.msBy).reduce((x, y) => x + y, 0);
+  const ses = new Map(); [...(b.sessions || []), ...(a.sessions || [])].forEach(x => { const p = ses.get(x.s); ses.set(x.s, p ? { s:x.s, e:Math.max(p.e, x.e), att:Math.max(p.att, x.att), cor:Math.max(p.cor, x.cor) } : clone(x)); });
+  out.sessions = [...ses.values()].sort((x, y) => x.s - y.s).slice(-40);
+  out.rounds = Math.max(a.rounds || 0, b.rounds || 0); out.xp = Math.max(a.xp || 0, b.xp || 0);
+  return out;
+}
+function adoptProgress(merged){ const keepDays = S.days, keepTg = S.settings.tgToken; S = Object.assign(DEFAULT_STATE(), clone(merged)); S.settings = Object.assign(DEFAULT_STATE().settings, merged.settings || {}, { tgToken: keepTg }); S.days = keepDays || {}; PLAYER = S.player; try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (_) {} }
+
 // ---------------- Cloud sync (artifact db) ----------------
 let DB = null, dbWriting = Promise.resolve(), progressTimer = null, logTimer = null;
 const SYNC = { mode:'local', last:0, err:'' };
@@ -1167,25 +1209,52 @@ async function initDb(){
     SYNC.mode = 'cloud';
     const snap = await DB.doc('progress/main').get();
     if (snap.exists) {
-      const remote = snap.data();
-      if ((remote.updatedAt || 0) > (S.updatedAt || 0)) {
-        const keepDays = S.days; S = Object.assign(DEFAULT_STATE(), JSON.parse(JSON.stringify(remote)));
-        S.settings = Object.assign(DEFAULT_STATE().settings, remote.settings || {}, { tgToken: (JSON.parse(localStorage.getItem(LS_KEY) || '{}').settings || {}).tgToken || '' });
-        S.days = keepDays || {}; PLAYER = S.player;
-        try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (_) {}
-        route();
-      } else if (S.updatedAt) { DIRTY = true; scheduleProgressSync(true); }
+      const remote = snap.data(); const mine = progressDoc();
+      const merged = mergeProgress(mine, remote);
+      adoptProgress(merged);
+      if (JSON.stringify(merged) !== JSON.stringify(mergeProgress(remote, remote)) && S.updatedAt) { DIRTY = true; scheduleProgressSync(true); }
+      route();
     } else if (S.player.name) { DIRTY = true; scheduleProgressSync(true); }
-    // pull today's remote log so counts continue across devices
+    // pull today's server log and merge, so counts continue across devices
     const ts = await DB.doc('log/' + dayKey()).get();
-    if (ts.exists) { const r = ts.data(); const t = today(); if ((r.att || 0) > t.att) { S.days[dayKey()] = Object.assign(t, JSON.parse(JSON.stringify(r))); } }
+    if (ts.exists) { S.days[dayKey()] = mergeDay(S.days[dayKey()], ts.data()); }
     if (VIEW.name === 'home') route();
   } catch (e) { SYNC.err = (e && e.code) || String(e); if (MODE.kind !== 'web') { DB = null; SYNC.mode = 'local'; } }
 }
-function queueWrite(fn){ dbWriting = dbWriting.then(fn).then(() => { SYNC.last = Date.now(); SYNC.err = ''; }).catch(e => { SYNC.err = (e && e.code) || String(e); }); return dbWriting; }
+let retryTimer = null;
+const RETRY_MS = 20000;
+const FAILED = {};
+function queueWrite(fn, kind = 'other'){
+  dbWriting = dbWriting.then(fn).then(() => { delete FAILED[kind]; SYNC.err = Object.values(FAILED)[0] || ''; if (!SYNC.err) SYNC.last = Date.now(); updateSyncBadge(); })
+    .catch(e => { FAILED[kind] = (e && e.code) || String(e); SYNC.err = FAILED[kind]; updateSyncBadge(); clearTimeout(retryTimer); retryTimer = setTimeout(() => { scheduleLogSync(true); scheduleProgressSync(true); }, RETRY_MS); });
+  return dbWriting;
+}
+function syncBadgeHtml(){
+  if (MODE.kind !== 'web') return '';
+  if (SYNC.err) return '<span class="chip" id="syncBadge" style="color:var(--bad)" title="Will retry automatically">Not saved online yet</span>';
+  if (SYNC.last) return '<span class="chip tnum" id="syncBadge" style="color:var(--good)">Saved online ' + fmtTime(SYNC.last) + '</span>';
+  return '<span class="chip" id="syncBadge" style="color:var(--ink2)">Online</span>';
+}
+function updateSyncBadge(){ const b = $('#syncBadge'); if (b) b.outerHTML = syncBadgeHtml(); const r = $('#saveState'); if (r) r.innerHTML = saveStateText(); }
+function saveStateText(){ if (MODE.kind !== 'web') return ''; if (SYNC.err) return 'Not saved online yet. It will keep trying; check the internet connection.'; return SYNC.last ? 'Saved online at ' + fmtTime(SYNC.last) + '.' : 'Saving…'; }
+// Fetch the latest progress from the server and adopt it when newer, so a stale device never overwrites newer progress.
+async function refreshProgress(){
+  if (!DB) return false;
+  try {
+    const snap = await DB.doc('progress/main').get();
+    if (snap.exists) adoptProgress(mergeProgress(progressDoc(), snap.data()));
+    return true;
+  } catch (e) { SYNC.err = (e && e.code) || String(e); return false; }
+}
 function progressDoc(){ const c = JSON.parse(JSON.stringify(S)); delete c.days; if (c.settings) c.settings.tgToken = ''; return c; }
-function scheduleProgressSync(now){ if (!DB || !DIRTY) return; clearTimeout(progressTimer); progressTimer = setTimeout(() => queueWrite(() => DB.doc('progress/main').set(progressDoc())), now ? 0 : 4000); }
-function scheduleLogSync(now){ if (!DB || !LOG_DIRTY) return; clearTimeout(logTimer); const k = dayKey(); logTimer = setTimeout(() => { const d = S.days[k]; if (d) queueWrite(() => DB.doc('log/' + k).set(JSON.parse(JSON.stringify(d)))); }, now ? 0 : 3000); }
+function scheduleProgressSync(now){ if (!DB || !DIRTY) return; clearTimeout(progressTimer); progressTimer = setTimeout(() => queueWrite(async () => {
+  const ref = DB.doc('progress/main'); let merged = progressDoc();
+  try { const snap = await ref.get(); if (snap.exists) merged = mergeProgress(merged, snap.data()); } catch (e) { if (e && e.code === 'unauthorized') throw e; }
+  await ref.set(merged); adoptProgress(mergeProgress(progressDoc(), merged)); }, 'progress'), now ? 0 : 4000); }
+function scheduleLogSync(now){ if (!DB || !LOG_DIRTY) return; clearTimeout(logTimer); const k = dayKey(); logTimer = setTimeout(() => { if (!S.days[k]) return; queueWrite(async () => {
+  const ref = DB.doc('log/' + k); let merged = clone(S.days[k]);
+  try { const snap = await ref.get(); if (snap.exists) merged = mergeDay(merged, snap.data()); } catch (e) { if (e && e.code === 'unauthorized') throw e; }
+  await ref.set(merged); S.days[k] = mergeDay(S.days[k], merged); }, 'log'); }, now ? 0 : 3000); }
 
 // ---------------- Active time tracking ----------------
 let lastInput = Date.now(), lastTick = Date.now(), sessionIdx = -1;
@@ -1193,7 +1262,7 @@ let lastInput = Date.now(), lastTick = Date.now(), sessionIdx = -1;
 function tickTime(){
   const now = Date.now(); const dt = now - lastTick; lastTick = now;
   if (document.visibilityState === 'visible' && now - lastInput < 90000 && dt < 20000 && S.player.name && (VIEW.name === 'play' || VIEW.name === 'results')) {
-    const t = today(); t.ms += dt; touchSession(t); LOG_DIRTY = true;
+    const t = today(); t.msBy = t.msBy || (t.ms ? { legacy:t.ms } : {}); t.msBy[DEVICE] = (t.msBy[DEVICE] || 0) + dt; t.ms = Object.values(t.msBy).reduce((x, y) => x + y, 0); touchSession(t); LOG_DIRTY = true;
   }
 }
 function touchSession(t){
@@ -1202,8 +1271,9 @@ function touchSession(t){
   if (t.sessions.length > 40) t.sessions.splice(0, t.sessions.length - 40);
 }
 setInterval(() => { tickTime(); if (VIEW.name === 'home') updateRing(); }, 5000);
-document.addEventListener('visibilitychange', () => { tickTime(); if (document.visibilityState === 'hidden') { saveLocal(LOG_DIRTY); scheduleLogSync(true); } });
-addEventListener('pagehide', () => { tickTime(); saveLocal(LOG_DIRTY); scheduleLogSync(true); });
+document.addEventListener('visibilitychange', () => { tickTime(); if (document.visibilityState === 'hidden') { saveLocal(false); scheduleLogSync(true); } });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && VIEW.name === 'parent' && VIEW.tab !== 'settings' && DB) renderParent($('#app')); });
+addEventListener('pagehide', () => { tickTime(); saveLocal(false); scheduleLogSync(true); });
 
 // ---------------- Sound + confetti ----------------
 let AC = null;
@@ -1401,7 +1471,7 @@ function renderHome(app){
   const greet = t.att === 0 ? 'Ready for today\'s quest, ' + esc(S.player.name) + '?' : t.ms >= S.settings.goalMin * 60000 ? 'Daily goal smashed, ' + esc(S.player.name) + '!' : 'Nice going, ' + esc(S.player.name) + '. Keep hopping!';
   let html = '<div class="top"><div class="brand">' + mascot('happy', 46) + '<div><h1>Fraction Quest</h1><small>Chapter 5 · Fractions</small></div></div>'
     + '<span class="chip tnum" title="Rank">' + ICON.gem + rk.name + ' · ' + S.xp + ' XP</span><span class="chip tnum" title="Days in a row">' + ICON.flame + streak + ' day' + (streak === 1 ? '' : 's') + '</span>'
-    + '<button class="btn ghost small" id="parentBtn" title="Parent area" style="display:inline-flex;align-items:center;gap:6px"><span style="width:18px;height:18px;display:inline-grid">' + ICON.lock + '</span>Parent</button></div>';
+    + syncBadgeHtml() + '<button class="btn ghost small" id="parentBtn" title="Parent area" style="display:inline-flex;align-items:center;gap:6px"><span style="width:18px;height:18px;display:inline-grid">' + ICON.lock + '</span>Parent</button></div>';
   if (MODE.kind === 'demo') html += '<div class="panel" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px"><b>Demo mode.</b><span class="muted" style="flex:1;min-width:200px">Everything works, including the parent report behind the lock. Progress stays in this browser only.</span><button class="btn ghost small" id="exitDemo">Exit demo</button></div>';
   html += '<div class="hero"><div class="mascot">' + mascot(t.att ? 'wow' : 'happy', 72) + '</div><div><div class="say">' + greet + '</div><div class="sub tnum">Today: ' + t.att + ' questions · ' + (t.att ? Math.round(100 * t.cor / t.att) : 0) + '% correct' + (rk.next ? ' · ' + (rk.next[1] - S.xp) + ' XP to ' + rk.next[0] : '') + '</div><div class="actions"><button class="btn coral" id="mixBtn">Daily Mix</button><button class="btn ghost" id="contBtn">Continue where I left off</button></div></div><div class="ring" id="ring"></div></div>';
   html += '<div class="map">';
@@ -1648,6 +1718,7 @@ function renderResults(app){
     + (RUN.w && !RUN.early ? '<div class="bigstars">' + starsHtml(st) + '</div>' : '')
     + '<div class="statrow"><div class="stat"><b class="tnum">' + (Math.round(s * 10) / 10) + '/' + n + '</b><span>Score</span></div><div class="stat"><b class="tnum">' + firstTry + '</b><span>First try</span></div><div class="stat"><b class="tnum">+' + (S.xp - RUN.xpStart) + '</b><span>XP</span></div></div>';
   if (RUN.newBadges.length) html += '<div><p style="font-weight:800">New badge' + (RUN.newBadges.length > 1 ? 's' : '') + '!</p>' + RUN.newBadges.map(b => '<span class="badge">' + ICON.star(true) + BADGES[b][0] + '</span>').join('') + '</div>';
+  if (MODE.kind === 'web') html += '<p class="note" id="saveState">' + saveStateText() + '</p>';
   if (RUN.w && !pass && !RUN.early) html += '<p class="muted">You need 7 points to pass. Questions you got wrong come back, so each round gets easier.</p>';
   html += '<div class="actions" style="justify-content:center;margin-top:16px"><button class="btn ghost" id="home">Back to map</button>' + (RUN.w || RUN.w === 0 ? '<button class="btn coral" id="again">' + (pass && RUN.w && RUN.L < 3 && levelUnlocked(RUN.w, RUN.L + 1) ? 'Next level' : 'Play again') + '</button>' : '') + '</div></div>';
   app.innerHTML = html;
@@ -1681,20 +1752,24 @@ function parentGate(){
   const m = document.createElement('div'); m.className = 'modal'; const hasPin = !!S.settings.pin;
   m.innerHTML = '<div class="sheet" style="max-width:380px"><h2>Parent area</h2><p class="muted">' + (hasPin ? 'Enter your 4 digit PIN.' : 'Create a 4 digit PIN so only you can open the reports.') + '</p><div class="field"><label for="pin">PIN</label><input id="pin" inputmode="numeric" maxlength="4" type="password" autocomplete="off"></div><p id="pinerr" class="note"></p><div class="ctrl"><button class="btn ghost" id="pc">Cancel</button><button class="btn" id="po">' + (hasPin ? 'Open' : 'Save PIN') + '</button></div></div>';
   document.body.appendChild(m); const inp = $('#pin', m); setTimeout(() => inp.focus(), 50);
-  const ok = () => { const v = inp.value.trim(); if (!/^\d{4}$/.test(v)) { $('#pinerr', m).textContent = 'Use exactly 4 digits.'; return; } if (!hasPin) { S.settings.pin = v; saveLocal(true); } else if (v !== S.settings.pin) { $('#pinerr', m).textContent = 'That PIN is not right.'; inp.value = ''; return; } m.remove(); go('parent', { tab:'report' }); };
+  const ok = async () => { const v = inp.value.trim(); if (!/^\d{4}$/.test(v)) { $('#pinerr', m).textContent = 'Use exactly 4 digits.'; return; } await refreshProgress(); if (!hasPin && S.settings.pin && v !== S.settings.pin) { $('#pinerr', m).textContent = 'A PIN was already set on another device. Enter that PIN.'; inp.value = ''; return; } if (!hasPin && !S.settings.pin) { S.settings.pin = v; saveLocal(true); } else if (v !== S.settings.pin) { $('#pinerr', m).textContent = 'That PIN is not right.'; inp.value = ''; return; } m.remove(); go('parent', { tab:'report' }); };
   $('#po', m).onclick = ok; $('#pc', m).onclick = () => m.remove(); inp.addEventListener('keydown', e => { if (e.key === 'Enter') ok(); });
 }
+const REPORT = { at:0, remote:false, err:'' };
 async function loadLogs(){
-  const local = Object.values(S.days);
-  if (!DB) return local;
-  try { const qs = await DB.collection('log').orderBy('date', 'desc').limit(30).get(); const remote = qs.docs.map(d => d.data()); const map = {}; local.forEach(d => map[d.date] = d); remote.forEach(d => { if (!map[d.date] || (d.att || 0) > (map[d.date].att || 0)) map[d.date] = d; }); return Object.values(map); } catch (_) { return local; }
+  const local = Object.values(S.days); REPORT.at = Date.now();
+  if (!DB) { REPORT.remote = false; REPORT.err = ''; return local; }
+  try { const qs = await DB.collection('log').orderBy('date', 'desc').limit(30).get(); const remote = qs.docs.map(d => d.data()); const map = {}; local.forEach(d => map[d.date] = d); remote.forEach(d => { if (!map[d.date] || (d.att || 0) > (map[d.date].att || 0)) map[d.date] = d; }); REPORT.remote = true; REPORT.err = ''; return Object.values(map); }
+  catch (e) { REPORT.remote = false; REPORT.err = (e && (e.message || e.code)) || 'unknown'; return local; }
 }
 async function renderParent(app){
   app.innerHTML = '<p class="muted">Loading report…</p>';
+  await refreshProgress();
   const logs = (await loadLogs()).sort((a, b) => a.date < b.date ? 1 : -1);
   const tk = dayKey(); const t = logs.find(d => d.date === tk) || { att:0, cor:0, first:0, hints:0, ms:0, sessions:[], attempts:[], skills:{}, worlds:{} };
   const pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '–';
-  let html = '<div class="dash"><div class="top"><button class="iconbtn" id="pback" aria-label="Back">' + ICON.back + '</button><div class="brand"><div><h1>Parent report</h1><small>' + esc(S.player.name || 'No player yet') + ' · ' + (SYNC.mode === 'cloud' ? 'synced online' : MODE.kind === 'demo' ? 'demo, this browser only' : 'saved on this device only') + '</small></div></div><button class="btn ghost small" id="tabR">Report</button><button class="btn ghost small" id="tabS">Settings</button></div>';
+  let html = '<div class="dash"><div class="top"><button class="iconbtn" id="pback" aria-label="Back">' + ICON.back + '</button><div class="brand"><div><h1>Parent report</h1><small>' + esc(S.player.name || 'No player yet') + ' · ' + (SYNC.mode === 'cloud' ? 'synced online' : MODE.kind === 'demo' ? 'demo, this browser only' : 'saved on this device only') + '</small></div></div><button class="btn ghost small" id="tabR">Report</button><button class="btn ghost small" id="tabS">Settings</button></div>'
+    + (VIEW.tab === 'settings' ? '' : '<div class="panel" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px"><span class="note tnum" style="flex:1;min-width:200px">' + (DB ? (REPORT.remote ? 'Live from the server, updated ' + fmtTime(REPORT.at) + '.' : '<b style="color:var(--bad)">Could not reach the server</b> (' + esc(REPORT.err) + '). Showing what this device has.') : MODE.kind === 'demo' ? 'Demo data from this browser.' : 'Data saved on this device.') + '</span><button class="btn ghost small" id="prefresh">Refresh</button></div>');
   if (VIEW.tab === 'settings') { app.innerHTML = html + settingsHtml() + '</div>'; wireParent(); wireSettings(); return; }
   const last = logs.find(d => d.att > 0); const lastAt = last && last.attempts && last.attempts.length ? last.attempts[last.attempts.length - 1].t : null;
   html += '<div class="tiles"><div class="tile"><span>Active today</span><b>' + mins(t.ms) + ' min</b><small>Goal ' + S.settings.goalMin + ' min</small></div><div class="tile"><span>Questions today</span><b>' + t.att + '</b><small>' + t.first + ' right on first try</small></div><div class="tile"><span>Accuracy today</span><b>' + pct(t.cor, t.att) + '</b><small>' + t.hints + ' hints used</small></div><div class="tile"><span>Last practice</span><b style="font-size:20px">' + (lastAt ? (dayKey(lastAt) === tk ? 'Today ' : last.date.slice(5) + ' ') + fmtTime(lastAt) : 'Never') + '</b><small>Day streak ' + dayStreak() + '</small></div></div>';
@@ -1717,7 +1792,7 @@ async function renderParent(app){
   html += '<div class="panel"><h3>Badges</h3>' + (Object.keys(S.badges).length ? Object.keys(S.badges).map(b => '<span class="badge">' + ICON.star(true) + BADGES[b][0] + '</span>').join('') : '<p class="note">None yet.</p>') + '</div></div>';
   app.innerHTML = html; wireParent();
 }
-function wireParent(){ $('#pback').onclick = () => go('home'); $('#tabR').onclick = () => go('parent', { tab:'report' }); $('#tabS').onclick = () => go('parent', { tab:'settings' }); }
+function wireParent(){ const rf = $('#prefresh'); if (rf) rf.onclick = () => go('parent', { tab:'report' }); $('#pback').onclick = () => go('home'); $('#tabR').onclick = () => go('parent', { tab:'report' }); $('#tabS').onclick = () => go('parent', { tab:'settings' }); }
 function settingsHtml(){
   const st = S.settings;
   return '<div class="panel"><h3>Daily goal</h3><div class="field"><label for="goal">Active minutes per day</label><input id="goal" type="number" min="10" max="180" value="' + st.goalMin + '"></div></div>'
@@ -1729,7 +1804,7 @@ function settingsHtml(){
     + '<div class="ctrl"><span class="note">Sync: ' + SYNC.mode + (SYNC.last ? ', last saved ' + fmtTime(SYNC.last) : '') + (SYNC.err ? ', last error ' + esc(SYNC.err) : '') + '</span><button class="btn" id="ssave">Save settings</button></div>';
 }
 function wireSettings(){
-  $('#ssave').onclick = () => { const st = S.settings; const g = +$('#goal').value; if (g >= 10 && g <= 180) st.goalMin = g; const np = $('#npin').value.trim(); if (np) { if (!/^\d{4}$/.test(np)) return toast('PIN must be 4 digits'); st.pin = np; } st.unlockAll = $('#unl').checked; st.sound = $('#snd').checked; if ($('#tgt')) { st.tgToken = $('#tgt').value.trim(); st.tgChat = $('#tgc').value.trim(); } saveLocal(true); toast('Settings saved'); };
+  $('#ssave').onclick = async () => { await refreshProgress(); const st = S.settings; const g = +$('#goal').value; if (g >= 10 && g <= 180) st.goalMin = g; const np = $('#npin').value.trim(); if (np) { if (!/^\d{4}$/.test(np)) return toast('PIN must be 4 digits'); st.pin = np; } st.unlockAll = $('#unl').checked; st.sound = $('#snd').checked; if ($('#tgt')) { st.tgToken = $('#tgt').value.trim(); st.tgChat = $('#tgc').value.trim(); } saveLocal(true); toast('Settings saved'); };
   const rt = $('#reptest'); if (rt) rt.onclick = async () => { $('#repres').textContent = 'Sending…'; try { const j = await DB.call('POST', '/api/report?test=1&date=' + dayKey(), {}); $('#repres').textContent = (j.sent.email || j.sent.telegram ? 'Sent by ' + [j.sent.email && 'email', j.sent.telegram && 'Telegram'].filter(Boolean).join(' and ') + '.' : (j.note || 'Not sent: ' + (j.errors || []).join(', '))) + '\n\n' + j.text; } catch (e) { $('#repres').textContent = 'Could not send: ' + (e.message || e.code); } };
   const fg = $('#forget'); if (fg) fg.onclick = () => { lsSet('fq.familyCode', null); location.reload(); };
   const tt = $('#tgtest'); if (tt) tt.onclick = async () => { S.settings.tgToken = $('#tgt').value.trim(); S.settings.tgChat = $('#tgc').value.trim(); saveLocal(); const ok = await tgSend('Fraction Quest is connected. You will get round updates for ' + S.player.name + '.'); $('#tgres').textContent = ok ? 'Sent. Check Telegram.' : 'Could not send. Check the token and chat id, and open the game as a local file.'; };
