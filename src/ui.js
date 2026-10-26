@@ -120,8 +120,15 @@ async function initDb(){
       route();
     } else if (S.player.name) { DIRTY = true; scheduleProgressSync(true); }
     // pull today's server log and merge, so counts continue across devices
-    const ts = await DB.doc('log/' + dayKey()).get();
-    if (ts.exists) { S.days[dayKey()] = mergeDay(S.days[dayKey()], ts.data()); }
+    // upload any day from the past week that this device has but the server is missing (for example after a failed save)
+    const weekAgo = dayKey(Date.now() - 7 * 86400000);
+    for (const k of Object.keys(S.days).filter(k => k >= weekAgo).sort()) {
+      const local = S.days[k]; const snap = await DB.doc('log/' + k).get(); const remote = snap.exists ? snap.data() : null;
+      const merged = mergeDay(local, remote); S.days[k] = merged;
+      const missing = (local.att || 0) > 0 && (!remote || merged.att > (remote.att || 0) || merged.ms > (remote.ms || 0) + 60000);
+      if (missing) queueWrite(() => DB.doc('log/' + k).set(clone(merged)), 'log');
+    }
+    if (!S.days[dayKey()]) { const ts = await DB.doc('log/' + dayKey()).get(); if (ts.exists) S.days[dayKey()] = mergeDay(null, ts.data()); }
     if (VIEW.name === 'home') route();
   } catch (e) { SYNC.err = (e && e.code) || String(e); if (MODE.kind !== 'web') { DB = null; SYNC.mode = 'local'; } }
 }

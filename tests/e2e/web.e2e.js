@@ -114,7 +114,19 @@ module.exports = async function webE2E() {
     await laptop.waitForFunction(() => /Saved online/.test(document.body.innerText), null, { timeout: 40000 });
     const recovered = (await api('/api/logs')).logs[0].att;
     ok('failed save retries by itself and reaches the server', recovered === 7, 'att ' + recovered);
-    // 10. forgotten code: a device with a stale code is sent back to the gate
+    // 10. answers that never reached the server are uploaded the next time the game opens
+    const kid = watch(await (await b.newContext()).newPage());
+    await kid.goto(base + '/'); await kid.fill('#fcode', process.env.FAMILY_CODE); await kid.click('#genter'); await kid.waitForSelector('.lv');
+    await kid.route(u => decodeURIComponent(String(u)).includes('/api/doc?path=log/'), route => route.request().method() === 'PUT' ? route.fulfill({ status: 500, body: '{}' }) : route.continue());
+    await kid.click('.lv[data-w="1"][data-l="1"]'); await kid.waitForSelector('#check');
+    for (let i = 0; i < 2; i++) { await kid.evaluate(answerCorrectly); await kid.click('#check'); await kid.click('#next'); }
+    await kid.waitForTimeout(4000);
+    const beforeReopen = (await api('/api/logs')).logs[0].att;
+    await kid.unroute(() => true); await kid.close({ runBeforeUnload: false });
+    const kid2 = watch(await kid.context().newPage()); await kid2.goto(base + '/'); await kid2.waitForSelector('.lv'); await kid2.waitForTimeout(3000);
+    const afterReopen = (await api('/api/logs')).logs[0].att;
+    ok('unsaved answers upload when the game is opened again', beforeReopen === 7 && afterReopen === 9, 'before ' + beforeReopen + ', after ' + afterReopen);
+    // 11. forgotten code: a device with a stale code is sent back to the gate
     const stale = watch(await (await b.newContext()).newPage());
     await stale.goto(base + '/'); await stale.evaluate(() => localStorage.setItem('fq.familyCode', 'old-code')); await stale.reload();
     await stale.waitForSelector('#fcode'); ok('stale code goes back to the gate', /no longer works/.test(await stale.innerText('#gerr')));
