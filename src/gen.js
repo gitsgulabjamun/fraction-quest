@@ -242,11 +242,26 @@ VALIDATORS.between = (p, list) => { const m = _between(p, list); if (m) return m
 const _pairsum = VALIDATORS.pairsum;
 VALIDATORS.pairsum = (p, pairs) => { const m = _pairsum(p, pairs); if (m) return m; if (p.diffDen) for (const [a, b] of pairs) if (a.rd === b.rd) return 'Each pair needs two DIFFERENT denominators. That is the challenge!'; return null; };
 
-function makeQuestion(world, level){
+function makeQuestion(world, level, index){
   const pool = GEN[world]['L' + level];
   for (let tries = 0; tries < 20; tries++) {
-    try { const q = R.pick(pool)(); q.id = 'g' + world + '-' + level + '-' + Math.random().toString(36).slice(2, 8); q.gen = true; prepare(q); if (!q._broken) return q; } catch (e) { /* retry */ }
+    try {
+      const i = index != null && pool[index] ? index : Math.floor(Math.random() * pool.length);
+      const q = pool[i](); q.id = 'g' + world + '-' + level + '-' + Math.random().toString(36).slice(2, 8); q.gen = true; q.gk = { w:world, L:level, i };
+      prepare(q); if (!q._broken) return q;
+    } catch (e) { /* retry */ }
   }
   throw new Error('generator failed for world ' + world);
 }
-if (typeof module !== 'undefined') module.exports = { GEN, makeQuestion };
+// A fresh question of the same kind (same generator), with different numbers from the one she missed.
+function questionSignature(q){ return String(q.q || '') + ' = ' + (q._ans && q._ans.tok ? q._ans.tok() : JSON.stringify(q._ans !== undefined ? q._ans : q.a)); }
+function makeSimilar(gk, avoidSig, sk){
+  let fallback = null;
+  for (let t = 0; t < 30; t++) {
+    const q = makeQuestion(gk.w, gk.L, gk.i); const fresh = questionSignature(q) !== avoidSig;
+    if (fresh && (!sk || q.sk === sk)) return q;
+    if (fresh && !fallback) fallback = q; else if (!fallback && t === 29) fallback = q;
+  }
+  return fallback;
+}
+if (typeof module !== 'undefined') module.exports = { GEN, makeQuestion, makeSimilar, questionSignature };

@@ -7,6 +7,8 @@ process.env.SHOTS = process.env.SHOTS || path.join(require('os').tmpdir(), 'fq-s
   const res = await require('./web.e2e.js')(); res.forEach(r => console.log('  ' + r)); if (res.some(r => r.startsWith('FAIL'))) failed = true;
   console.log('== Typing like a phone keyboard');
   const typ = await require('./typing.e2e.js')(); typ.forEach(r => console.log('  ' + r)); if (typ.some(r => r.startsWith('FAIL'))) failed = true;
+  console.log('== Try again: misses and half credit return as fresh questions');
+  const rt = await require('./retry.e2e.js')(); rt.forEach(r => console.log('  ' + r)); if (rt.some(r => r.startsWith('FAIL'))) failed = true;
   const checks = [['playtest.js', /fails 0\b/, 'Every question on every level accepts its correct answer'], ['visualtest.js', /bad 0\b/, 'Every figure draws its shaded parts'], ['mobiletest.js', /overflow \[\]/, 'No sideways scrolling at phone width']];
   for (const [file, pass, label] of checks) {
     const out = execFileSync('node', [path.join(__dirname, file)], { encoding: 'utf8', timeout: 900000, env: process.env });

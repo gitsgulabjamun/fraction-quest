@@ -77,7 +77,9 @@ function mergeProgress(a, b){
     for (const L of ['L1', 'L2', 'L3']) { if (!ow[L]) continue; nw[L] = nw[L] || { best:0, rounds:0 }; nw[L].best = Math.max(nw[L].best || 0, ow[L].best || 0); nw[L].rounds = Math.max(nw[L].rounds || 0, ow[L].rounds || 0); }
     if (ow.L1 && ow.L1.seen) { nw.L1.seen = nw.L1.seen || {}; for (const id in ow.L1.seen) if (ow.L1.seen[id] === 1 || nw.L1.seen[id] === undefined) nw.L1.seen[id] = Math.max(ow.L1.seen[id], nw.L1.seen[id] || 0); } }
   out.skills = clone(newer.skills); for (const k in (o.skills || {})) if (!out.skills[k] || o.skills[k].a > out.skills[k].a) out.skills[k] = clone(o.skills[k]);
-  const seenRetry = new Set((out.retry || []).map(r => JSON.stringify(r.spec))); (o.retry || []).forEach(r => { if (!seenRetry.has(JSON.stringify(r.spec))) (out.retry = out.retry || []).push(r); }); if (out.retry && out.retry.length > 30) out.retry = out.retry.slice(-30);
+  out.retryDone = [...new Set([...(o.retryDone || []), ...(newer.retryDone || [])])].slice(-200);
+  const done = new Set(out.retryDone); const rkey = r => r.id || JSON.stringify(r.spec);
+  const seenRetry = new Set(); out.retry = [...(newer.retry || []), ...(o.retry || [])].filter(r => { const k = rkey(r); if (done.has(k) || seenRetry.has(k)) return false; seenRetry.add(k); return true; }).slice(-30);
   out.updatedAt = Math.max(a.updatedAt || 0, b.updatedAt || 0); delete out.days;
   return out;
 }
@@ -330,21 +332,28 @@ function buildRound(w, L){
   }
   const qs = []; const n = 10;
   if (L === 3 && w > 1 && w < 12) { for (let i = 0; i < 2; i++) { const pw = R.int(1, w - 1); qs.push(Object.assign(makeQuestion(pw, R.pick([2, 3])), { review:pw })); } }
-  pullRetries(qs, r => r.w === w, 2);
+  RUN_WORLD_HINT = w; pullRetries(qs, r => r.w === w, 2);
   while (qs.length < n) qs.push(makeQuestion(w, L));
   return R.shuffle(qs);
 }
 function pullRetries(qs, pred, max){
   const list = (S.retry || []).filter(pred).slice(0, max);
-  list.forEach(r => { try { const q = prepare(JSON.parse(JSON.stringify(r.spec))); q.id = 'r-' + Math.random().toString(36).slice(2, 8); q.gen = true; q.retried = r; q.again = true; if (!q._broken) qs.push(q); } catch (_) {} });
+  list.forEach(r => { try {
+    let q;
+    if (r.gk && GEN[r.gk.w] && GEN[r.gk.w]['L' + r.gk.L] && GEN[r.gk.w]['L' + r.gk.L][r.gk.i]) q = makeSimilar(r.gk, r.sig, r.sk);
+    else if (r.spec) { q = prepare(JSON.parse(JSON.stringify(r.spec))); q.gen = true; }
+    if (!q || q._broken) return;
+    q.id = 'r-' + Math.random().toString(36).slice(2, 8); q.retried = r; q.again = true; if (r.w && r.w !== RUN_WORLD_HINT) q.review = r.w; qs.push(q);
+  } catch (_) {} });
 }
+let RUN_WORLD_HINT = 0;
 function buildDailyMix(){
   const open = []; for (let w = 1; w <= 11; w++) if (levelUnlocked(w, 2)) open.push(w);
   if (!open.length) open.push(1);
   const skillAcc = sk => { const s = S.skills[sk]; return s && s.a >= 3 ? s.c / s.a : 0.6; };
   const weightOf = w => { const sks = new Set(bookFor(w).map(q => q.sk)); let worst = 1; sks.forEach(k => { worst = Math.min(worst, skillAcc(k)); }); return 1.4 - worst; };
   const weights = open.map(weightOf); const tot = weights.reduce((a, b) => a + b, 0);
-  const qs = []; pullRetries(qs, () => true, 4); while (qs.length < 10) { let r = Math.random() * tot, i = 0; while (r > weights[i] && i < weights.length - 1) { r -= weights[i]; i++; } qs.push(Object.assign(makeQuestion(open[i], levelUnlocked(open[i], 3) && Math.random() < .5 ? 3 : 2), { review:open[i] })); }
+  RUN_WORLD_HINT = 0; const qs = []; pullRetries(qs, () => true, 4); while (qs.length < 10) { let r = Math.random() * tot, i = 0; while (r > weights[i] && i < weights.length - 1) { r -= weights[i]; i++; } qs.push(Object.assign(makeQuestion(open[i], levelUnlocked(open[i], 3) && Math.random() < .5 ? 3 : 2), { review:open[i] })); }
   return qs;
 }
 
@@ -567,7 +576,7 @@ function doCheck(q){
     if (perfect && q.t === 'frac' && q._ans && !q._ans.isInt() && q.form !== 'exact') { S.simpl = (S.simpl || 0) + 1; if (S.simpl >= 20) award('simpl'); }
     award('first'); if (RUN.streak >= 10) award('streak10');
     const praise = perfect ? R.pick(['Brilliant!', 'Spot on!', 'Nailed it!', 'Super!', 'Yes! First try!']) : R.pick(['You got there!', 'Correct!', 'Well fixed!']);
-    fbBox('good', praise + ' <span class="muted" style="font-size:14px">+' + (xp + bonus) + ' XP</span>', (r.tip ? '<p>' + rich(r.tip) + '</p>' : '') + (q.why || (q.sol && RUN.L > 1) ? '<details><summary style="cursor:pointer;font-weight:800">See why</summary>' + solutionHtml(q) + '</details>' : ''), 'happy');
+    fbBox('good', praise + ' <span class="muted" style="font-size:14px">+' + (xp + bonus) + ' XP</span>', (r.tip ? '<p>' + rich(r.tip) + '</p>' : '') + (!perfect ? '<p class="note">' + (q.gen ? 'One like this will come back later for more practice.' : 'This one will come back in a later Warm-up until you get it first try.') + '</p>' : '') + (q.why || (q.sol && RUN.L > 1) ? '<details><summary style="cursor:pointer;font-weight:800">See why</summary>' + solutionHtml(q) + '</details>' : ''), 'happy');
     beep('good'); if (perfect && RUN.streak % 5 === 0) confetti(60);
     if (q.t === 'mcq' || q.t === 'yn') markOpts(q);
     return endQ(q, perfect ? 1 : 0.5);
@@ -586,7 +595,7 @@ function reveal(q, gaveUp, msg){
   if (q.t === 'cmp') $('#slot').textContent = q._ans;
   if (q.t === 'line') { $('#fig').innerHTML = numberLine(q.max, q.den, q._ans.mul(q.den).n, false); }
   if (q.t === 'shade') { const tot = q.fig.k === 'pie' ? q.fig.n : q.fig.r * q.fig.c; const k = q._ans.mul(tot).n; $('#fig').innerHTML = svgFig(q.fig, { sel:new Set([...Array(k).keys()]) }); }
-  fbBox('bad', gaveUp ? 'Here is how it works' : 'Let\'s see how it works', (msg ? '<p>' + rich(msg) + '</p>' : '') + '<p><b>Answer:</b> ' + rich(q._ans && q._ans.tok ? q._ans.tok() : q.t === 'mcq' ? q.opts[q.a] : q.t === 'yn' ? (q.a ? 'Yes' : 'No') : q.t === 'cmp' ? esc(q._ans) : q.t === 'order' ? q._ans.map(s => '{' + s + '}').join(', ') : 'see below') + '</p>' + solutionHtml(q) + '<p class="note">This one will come back later so you can try it again.</p>', 'sad');
+  fbBox('bad', gaveUp ? 'Here is how it works' : 'Let\'s see how it works', (msg ? '<p>' + rich(msg) + '</p>' : '') + '<p><b>Answer:</b> ' + rich(q._ans && q._ans.tok ? q._ans.tok() : q.t === 'mcq' ? q.opts[q.a] : q.t === 'yn' ? (q.a ? 'Yes' : 'No') : q.t === 'cmp' ? esc(q._ans) : q.t === 'order' ? q._ans.map(s => '{' + s + '}').join(', ') : 'see below') + '</p>' + solutionHtml(q) + '<p class="note">' + (q.gen ? 'A question like this, with new numbers, will come back later so you can try again.' : 'This question will come back in your next Warm-up so you can try it again.') + '</p>', 'sad');
   endQ(q, 0);
 }
 function endQ(q, ok){
@@ -599,9 +608,16 @@ function endQ(q, ok){
   S.skills[sk] = S.skills[sk] || { a:0, c:0 }; S.skills[sk].a++; if (ok === 1) S.skills[sk].c++; else if (ok > 0) S.skills[sk].c += 0.5;
   t.attempts.push({ t:Date.now(), w:wk, l:RUN.L, id:q.id, sk, ok, h:C.hints, n:C.tries, nu:C.nudged ? 1 : 0, ms, g:String(C.given).slice(0, 60), x:String(expectedText(q)).slice(0, 60), q:plain(q.q).slice(0, 140), bk:q.gen ? 0 : 1 });
   if (t.attempts.length > 600) t.attempts.splice(0, t.attempts.length - 600);
-  if (ok === 0 && q.gen) { S.retry = S.retry || []; const spec = {}; Object.keys(q).forEach(k => { if (k[0] !== '_' && !['sol','id','retried','again','review'].includes(k)) spec[k] = q[k]; }); spec.t = q.t; if (q.retried) S.retry = S.retry.filter(r => r !== q.retried); S.retry.push({ w: q.review || RUN.w || 1, spec }); if (S.retry.length > 30) S.retry.shift(); }
-  if (ok > 0 && q.retried) { S.retry = (S.retry || []).filter(r => r !== q.retried); }
-  if (!q.gen && RUN.w) { const seen = W(RUN.w).L1.seen; if (ok > 0 || seen[q.id] !== 1) seen[q.id] = ok > 0 ? 1 : 0; }
+  if (q.gen) {
+    S.retry = S.retry || [];
+    if (q.retried) { const id = q.retried.id; S.retry = S.retry.filter(r => r !== q.retried && !(id && r.id === id)); if (ok === 1 && id) { S.retryDone = (S.retryDone || []).concat(id).slice(-200); } }
+    if (ok < 1) {
+      const entry = { id: (q.retried && q.retried.id) || 'rt' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), w: q.review || RUN.w || (q.gk && q.gk.w) || 1, sk: q.sk, half: ok > 0 ? 1 : 0, misses: ((q.retried && q.retried.misses) || 0) + 1, sig: questionSignature(q) };
+      if (q.gk) entry.gk = q.gk; else { const spec = {}; Object.keys(q).forEach(k => { if (k[0] !== '_' && !['sol', 'id', 'retried', 'again', 'review'].includes(k)) spec[k] = q[k]; }); spec.t = q.t; entry.spec = spec; }
+      S.retry.push(entry); if (S.retry.length > 30) S.retry.shift();
+    }
+  }
+  if (!q.gen && RUN.w) { const seen = W(RUN.w).L1.seen; if (ok === 1) seen[q.id] = 1; else if (seen[q.id] !== 1) seen[q.id] = ok; }
   LOG_DIRTY = true; saveLocal(true); scheduleLogSync();
   $('#check').hidden = true; $('#hint').disabled = true; $('#show').hidden = true; $('#next').hidden = false; $('#next').textContent = RUN.i === RUN.qs.length - 1 ? 'See results' : 'Next'; $('#next').focus();
   $$('.card input').forEach(i => i.disabled = true);

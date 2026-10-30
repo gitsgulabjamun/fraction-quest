@@ -24,7 +24,7 @@ Other things that matter for learning:
 
 * **Simplification habit.** A correct value that is not simplified is not marked wrong. The game says "Right value! One more step" and asks her to finish it.
 * **Hints before answers.** Hints ask a guiding question first. After three wrong tries the full worked solution appears, step by step, generated from the same engine.
-* **Spaced retry.** A question she got wrong comes back in a later round, and the Daily Mix weights the islands where her skills are weakest.
+* **Spaced retry with fresh numbers.** A question she missed, or only got right after a hint or a second try, comes back in a later round as a new question of the same kind and skill, so she has to redo the reasoning instead of remembering an answer. It leaves the list only after a clean first try. Textbook questions stay unsolved until answered first time, and come first in the next Warm-up. The Daily Mix weights the islands where her skills are weakest.
 * **Learn cards** explain each idea with a picture before practice.
 
 ## Parent reporting
@@ -70,6 +70,7 @@ I learned the hard way that "every answer is accepted" is not the same as "the s
 | `npm test` (13 server tests) | API: auth, path validation, round trips, log ordering, rate limiting, report content, email and Telegram delivery, refusing to run without storage in production. Uses a fake Upstash server. |
 | Web end to end (26 checks) | Through a local server running the real handlers: family code gate, playing, sync from laptop to phone and back, parent report on a phone, demo mode never touching family data, the test report button, stale codes sent back to the gate. |
 | Merge tests (3 tests) | Two devices saving at once keep every question, add up their time, and never lose the PIN, XP, stars or badges. |
+| Try again (14 checks) | Misses and half credit answers return as fresh questions of the same kind and skill, leave the list only after a clean first try, appear in the Daily Mix, and stay cleared across devices. All 81 question kinds can produce fresh variants. |
 | Phone typing (7 checks) | Answers typed the way phone keyboards send them, where "1/4" arrives as plain text with no key events, still split into the right boxes. Found on the live site, not in the lab. |
 | Game regression | A headless browser plays 1,440 questions across every island and level through the real interface and confirms each correct answer is accepted. |
 | Figure check | Counts the shaded parts actually drawn on screen for every figure question. |
